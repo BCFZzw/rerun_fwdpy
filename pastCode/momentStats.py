@@ -33,7 +33,7 @@ fileName = str(nbins) + " Window Stats.npy"
 
 
 
-ws.allBinStats(SWvcfList, vcfPath, statsSWPath, maxLen = genomeLength, outName = "[" + str(start) + "-" + str(end) + "] sweep " + fileName, straddling = False, boundaries = nbins, save = True)
-ws.allBinStats(NSvcfList, NSvcfPath, statsNSPath, maxLen = genomeLength, outName = "[" + str(start) + "-" + str(end) + "] non sweep " + fileName, straddling = False, boundaries = nbins, save = True)
+ws.allBinStats(SWvcfList, vcfPath, statsSWPath, maxLen = genomeLength, outName = "[" + str(start) + "-" + str(end) + "] sweep " + fileName, boundaries = nbins, save = True)
+ws.allBinStats(NSvcfList, NSvcfPath, statsNSPath, maxLen = genomeLength, outName = "[" + str(start) + "-" + str(end) + "] non sweep " + fileName, boundaries = nbins, save = True)
 
 
