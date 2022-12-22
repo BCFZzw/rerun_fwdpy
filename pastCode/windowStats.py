@@ -2,12 +2,29 @@ import numpy as np
 import moments.LD
 import allel
 import os
-import time
+import pandas as pd
 
-def correctSegment(genotype, pos):
+def pandasParsing(pos, maxLen, binSize):
     """
-    Updated to the correct one
+    Updated to the correct one, still using pandas to subset quickly
     """
+    binEdge = np.array([i * maxLen/binSize for i in range(0, binSize + 1)])
+
+    df = pd.DataFrame(pos, columns =  ["positions"])
+    #@TODO: kept non polymorphic but skip with moments
+    labels = pd.cut(pos, binEdge, right = False)
+    df["labels"] = labels
+    indicesList = list(df.groupby("labels").indices.values()) #need to add list to avoid non-accessible issue
+
+    return df, indicesList
+
+
+def correctSegment(genotype, indiceList, index):
+    indice = indiceList[index]
+    if len(indice) == 0:
+        return None
+
+    return np.take(genotype, indice, axis = 0)
 
 
 def segmentation(allele, distanceMatrix, maxLen, boundaries):
@@ -69,7 +86,7 @@ def binStats(segment):
     #name = np.empty(shape = size, dtype = ("str", 10))
     for i in range(0, size):
         #TODO change to parsing
-        region = segment[i]
+        region = segment #originally multiple segments together, remove [i]
         stats = moments.LD.Parsing.compute_pairwise_stats(region, genotypes = True)
         
         D2[i] = np.sum(stats[0])
@@ -105,4 +122,13 @@ def allBinStats(vcf_list, inputPath, outputPath, maxLen = 1e7, outName = "window
     return resultList
 
 
+def pipeline(inputVcf, savePath, maxLen = 1e7, binSize = 25, save = True):
+    callset = allel.read_vcf(inputVcf, fields = ["variants/POS", "calldata/GT"])
+    pos = callset["variants/POS"]
+    genotype = callset["calldata/GT"]
     
+    df, indiceList = pandasParsing(pos, maxLen, binSize)
+    assert len(indiceList) == binSize
+    for i in range(binSize):
+        segment = correctSegment(genotype, indiceList, i)
+        result =  binStats(segment)
