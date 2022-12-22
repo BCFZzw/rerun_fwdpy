@@ -1,5 +1,8 @@
 import numpy as np
 import moments.LD
+import allel
+import os
+import time
 
 def segmentation(allele, distanceMatrix, maxLen, boundaries):
     """
@@ -24,6 +27,15 @@ def segmentation(allele, distanceMatrix, maxLen, boundaries):
         #segmentName[i-1] = "R"+str(i)
     return segment#, segmentName
 
+def shapeTransform(allel):
+    """
+    Return a genotype array suitable for moment parsing
+    Add within each bracket, haplotype 0|0 = 0, 0|1 = 1, 1|1 = 2
+    @param allel {list/numpy.narray}: haplotype matrix from allel 
+    @return {numpy.narray}: 0, 1, 2 genotype matrix for moment parsing
+    """
+    return np.sum(allel, axis =2)
+
 def readVcf(fileName, inputPath): #checked
     """
     read a single vcf (with input directory or not, if not inputPath = "")
@@ -32,7 +44,7 @@ def readVcf(fileName, inputPath): #checked
     @return {np.narray two fields}
     @TODO: extract contig length, slightly hard and might require hardcoding
     """
-    read = allel.read_vcf(inputPath + fileName, fields = ["variants/POS", "calldata/GT"])
+    read = allel.read_vcf(os.path.join(inputPath ,fileName), fields = ["variants/POS", "calldata/GT"])
     distance = read["variants/POS"]
     momentGenotype = shapeTransform(read["calldata/GT"])
     return distance, momentGenotype
