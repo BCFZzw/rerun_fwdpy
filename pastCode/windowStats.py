@@ -4,8 +4,16 @@ import allel
 import os
 import time
 
+def correctSegment(genotype, pos):
+    """
+    Updated to the correct one
+    """
+
+
 def segmentation(allele, distanceMatrix, maxLen, boundaries):
     """
+    Wrong, deprecated
+    -------------------------
     Separate a given allele matrix into equal genomic distance segments
     @param: allele {np.narray}. "calldata/GT" matrix extracted from scikit allele of a vcf
     @param: distanceMatrix. {np.narray} "variants/POS" matrix extracted from scikit allele of a vcf 
@@ -30,11 +38,10 @@ def segmentation(allele, distanceMatrix, maxLen, boundaries):
 def shapeTransform(allel):
     """
     Return a genotype array suitable for moment parsing
-    Add within each bracket, haplotype 0|0 = 0, 0|1 = 1, 1|1 = 2
-    @param allel {list/numpy.narray}: haplotype matrix from allel 
-    @return {numpy.narray}: 0, 1, 2 genotype matrix for moment parsing
+    -------previous function uses np.sum(axis = 2), updated to scikit-allel function
+
     """
-    return np.sum(allel, axis =2)
+    return allel.to_n_alt(fill=-1)
 
 def readVcf(fileName, inputPath): #checked
     """
