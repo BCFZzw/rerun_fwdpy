@@ -73,9 +73,10 @@ for i in range((job-1) * 5, job*5):
         params,
         mutation_data,
         fwdpy11.conditional_models.GlobalFixation()
+        return_when_stopping_condition_met = True #very important parameters
     )
 
-    assert output.pop.generation == params.simlen # miss leading
+    assert output.pop.generation <= params.simlen # miss leading
     assert pop.generation == 0
 
     FIXATION_TIME = output.pop.fixation_times[0]

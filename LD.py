@@ -4,13 +4,13 @@ import sys
 import os
 import numpy as np
 
-def simPipeline(callset):
+def simPipeline(callset, maxLen, binSize):
     genotype = allel.GenotypeChunkedArray(callset['calldata/GT'])
     #daskGenotype = allel.GenotypeDaskArray(genotype)
     position = allel.SortedIndex(callset['variants/POS'])
     assert np.shape(genotype)[0] == np.shape(position)[0]
 
-    binEdgeBp = [i*4e5 for i in range(0, 26)]
+    binEdgeBp = [i* maxLen/binSize for i in range(0, binSize + 1)]
     
     df = zm.pandasParsing(position, binEdgeBp)
     print("Bins created: "+ str(df.labels.nunique()))
@@ -27,6 +27,9 @@ vcfPath = "/home/alouette/projects/ctb-sgravel/alouette/fwdpy_data/vcfs/Nielsen_
 savePath = "/home/alouette/projects/ctb-sgravel/alouette/rerun_fwdpy_data/previous_run_LD"
 job = int(sys.argv[1])
 
+genomeLength = 1e7
+binSize = 25
+
 for i in range((job-1) * 5, job*5):
     vcfID = str(i)
 
@@ -36,13 +39,15 @@ for i in range((job-1) * 5, job*5):
 
     callset = allel.read_vcf(sweepVcf)
 
-    statsDf = simPipeline(callset)
+    statsDf = simPipeline(callset, genomeLength, binSize)
 
     statsDf.to_csv(os.path.join(savePath, "sweep", "sweep_" + vcfID  + ".csv"), index = False)
 
+    break
+    
     callset = allel.read_vcf(neutralVcf)
 
-    statsDf = simPipeline(callset)
+    statsDf = simPipeline(callset, genomeLength, binSize)
 
     statsDf.to_csv(os.path.join(savePath, "no_sweep", "neutral_" + vcfID  + ".csv"), index = False)
 

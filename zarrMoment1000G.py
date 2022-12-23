@@ -116,16 +116,18 @@ def parseAndMoment(df, subsetGeno, filePrefix = "", savePath = "", save = True):
     medianPos = np.empty(shape = size)
     snpCounts = np.empty(shape = size)
     
-    indicesList = df.groupby("labels").indices.values() 
+    indicesList = list(df.groupby("labels").indices.values() )
     counter = 0
 
     for indices in indicesList: #@TODO possibly not optimal
         if len(indices) < 2:
+            #@TODO: save as 0 or sth else, same with polymorphisms
             continue
         
         data = np.take(subsetGeno, indices, axis = 0) #optimize?
         assert np.shape(data)[0] == len(indices)
         stats = moments.LD.Parsing.compute_pairwise_stats(data, genotypes = True)
+        # when genotypes = True, use 0, 1, 2
         #I remember this is faster than df[idx] = ... each time 
         D2[counter] = np.sum(stats[0]) #sum up every possible pair values
         Dz[counter] = np.sum(stats[1])
@@ -150,15 +152,6 @@ def parseAndMoment(df, subsetGeno, filePrefix = "", savePath = "", save = True):
                             "D": D
                             })
 
-    if save:
-        hf = h5py.File(os.path.join(savePath, filePrefix + "_LD.h5"), "w")
-        hf.create_dataset('D2', data = D2)
-        hf.create_dataset('Dz', data = Dz)
-        hf.create_dataset('Pi2', data = Pi2)
-        hf.create_dataset('D', data = D)
-        hf.create_dataset('medPosition', data = medianPos)
-        hf.create_dataset('snpCounts', data = snpCounts)
-        hf.close()
 
     return statsDf
 
