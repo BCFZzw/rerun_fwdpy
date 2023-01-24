@@ -8,21 +8,22 @@ import os
 
 nPop = 500 #ancestral size
 nSample = 500
-NielsenRecRate = 500 
+NielsenRecRate = 500 #4NLp
 NielsenMutRate =0.002 #4Nmu, mu is the rate of mutation per bp per generation (bp)
 NielsenAlpha = 500
 simGenomeLength = int(1e7)
 addMutLeft = simGenomeLength/2 
 addMutRight = simGenomeLength/2+1 
 fwdpySimLen = 100
-savePath = "/home/alouette/projects/ctb-sgravel/alouette/rerun_fwdpy_data"
-job = int(sys.argv[1])
 
+job = int(sys.argv[1])
+savePath = sys.argv[2]
+settingSeed = int(sys.argv[3])
 
 fwdpyAlpha = NielsenAlpha #2Ns
 fwdpyMuRate = NielsenMutRate/4/nPop*simGenomeLength # fwdpy takes haploid genome mutation rate per generation
 fwdpyRecRate = NielsenRecRate/4/nPop #genome wide recombination rate
-msprimeRecRate = NielsenRecRate/4/nPop/simGenomeLength
+msprimeRecRate = NielsenRecRate/4/nPop/simGenomeLength #simulation per bp
 
 
 
@@ -36,7 +37,8 @@ def setup(seed, simLen = fwdpySimLen):
         population_size=nPop,
         recombination_rate=msprimeRecRate,
         random_seed=seed+1,
-        sequence_length=simGenomeLength
+        sequence_length=simGenomeLength,
+        discrete_genome =True #True by default
     )
 
     # Build the pop from msprime output
@@ -57,7 +59,7 @@ def setup(seed, simLen = fwdpySimLen):
     return pop, params
 
 for i in range((job-1) * 5, job*5):
-    seed = 100 + i
+    seed = settingSeed + i
     rng = fwdpy11.GSLrng(seed)
     pop, params = setup(seed)
 
@@ -72,8 +74,8 @@ for i in range((job-1) * 5, job*5):
         pop,
         params,
         mutation_data,
-        fwdpy11.conditional_models.GlobalFixation()
-        return_when_stopping_condition_met = True #very important parameters
+        fwdpy11.conditional_models.GlobalFixation(),
+        return_when_stopping_condition_met = True #very important parameters, it will stop when sweep fixes
     )
 
     assert output.pop.generation <= params.simlen # miss leading
@@ -87,8 +89,8 @@ for i in range((job-1) * 5, job*5):
     
     ts = output.pop.dump_tables_to_tskit()
 
-    ts.dump(os.path.join( savePath, "sim", "sweep", "sweep_"  + str(i) +  ".trees"))
-    with open(os.path.join( savePath, "vcf", "sweep", "sweep_"  + str(i) +  ".vcf"), "w") as vcfFile:
+    ts.dump(os.path.join( savePath, "sim", "sweep", "sweep_"  + str(seed) +  ".trees"))
+    with open(os.path.join( savePath, "vcf", "sweep", "sweep_"  + str(seed) +  ".vcf"), "w") as vcfFile:
         ts.write_vcf(vcfFile, individuals =  [i for i in range(50)])
 
     neuPop, neuParams = setup(seed, FIXATION_TIME)
@@ -99,7 +101,7 @@ for i in range((job-1) * 5, job*5):
     print(f"{nmuts} mutations added to neutral")
 
     ts = neuPop.dump_tables_to_tskit()
-    with open(os.path.join( savePath, "vcf", "neutral", "neutral_"  + str(i) +  ".vcf"), "w") as vcfFile:
+    with open(os.path.join( savePath, "vcf", "neutral", "neutral_"  + str(seed) +  ".vcf"), "w") as vcfFile:
         ts.write_vcf(vcfFile, individuals =  [i for i in range(50)])
 
-    #ts.dump(os.path.join( savePath, "neutral", "neutral_"  + str(i) +  ".trees"))
+    ts.dump(os.path.join( savePath, "neutral", "neutral_"  + str(seed) +  ".trees"))
