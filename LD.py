@@ -6,6 +6,20 @@ import pandas as pd
 import moments
 
 job = int(sys.argv[1])
+vcfPath = sys.argv[2]
+savePath = sys.argv[3]
+
+
+def getFileList(simSavePath, suffix):
+    """
+    List and sort all files inside a directory, note that it can include undesired files
+    sorting is done naively
+    @param: File directory {string}
+    @return: {list}
+    """
+    fileList  = os.listdir(simSavePath)
+    fileList.sort()
+    return [f for f in fileList if f.endswith(suffix)]
 
 def pandasParsing(subsetPos, binEdgeBp):
     """
@@ -99,18 +113,22 @@ def simPipeline(callset, maxLen, binSize):
     return statsDf
 
 
-vcfPath = "/home/alouette/projects/ctb-sgravel/alouette/rerun_fwdpy_data/vcf"
-savePath = "/home/alouette/projects/ctb-sgravel/alouette/rerun_fwdpy_data/LD"
+
 
 
 genomeLength = 1e7
 binSize = 25
 
-for i in range((job-1) * 5, job*5):
-    vcfID = str(i)
+sweepList  = getFileList(os.path.join(vcfPath, "sweep"), ".vcf")
+neutralList  = getFileList(os.path.join(vcfPath, "neutral"), ".vcf")
 
-    sweepVcf = os.path.join(vcfPath, "sweep", "sweep_" + vcfID + ".vcf")
-    neutralVcf = os.path.join(vcfPath, "neutral", "neutral_" + vcfID + ".vcf")
+
+for i in range((job-1) * 5, job*5):
+    sweepFile = sweepList[i]
+    neutralFile = neutralList[i]
+
+    sweepVcf = os.path.join(vcfPath, "sweep", sweepFile)
+    neutralVcf = os.path.join(vcfPath, "neutral", neutralFile)
 
 
     callset = allel.read_vcf(sweepVcf)
