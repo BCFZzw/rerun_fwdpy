@@ -42,7 +42,13 @@ nbins = 25
 fileName = str(nbins) + " Window Stats.npy"
 
 
-ws.allBinStats(SWvcfList, vcfPath, statsSWPath, maxLen = genomeLength, outName = "[" + str(start) + "-" + str(end) + "] sweep " + fileName, boundaries = nbins, save = True)
-ws.allBinStats(NSvcfList, NSvcfPath, statsNSPath, maxLen = genomeLength, outName = "[" + str(start) + "-" + str(end) + "] non sweep " + fileName, boundaries = nbins, save = True)
+#ws.allBinStats(SWvcfList, vcfPath, statsSWPath, maxLen = genomeLength, outName = "[" + str(start) + "-" + str(end) + "] sweep " + fileName, boundaries = nbins, save = True)
+#ws.allBinStats(NSvcfList, NSvcfPath, statsNSPath, maxLen = genomeLength, outName = "[" + str(start) + "-" + str(end) + "] non sweep " + fileName, boundaries = nbins, save = True)
 
+for vcf in SWvcfList:
+    saveFile = os.path.join(statsSWPath, vcf[:-4] + ".csv")
+    ws.pipeline(os.path.join(vcfPath, vcf), saveFile, genomeLength, nbins, save = True)
 
+#for vcf in NSvcfList:
+#    saveFile = os.path.join(statsNSPath, vcf[:-4] + ".csv")
+#    ws.pipeline(os.path.join(NSvcfPath, vcf), saveFile, genomeLength, nbins, save = True)

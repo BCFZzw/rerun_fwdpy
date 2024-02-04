@@ -86,7 +86,7 @@ def binStats(segment):
     #name = np.empty(shape = size, dtype = ("str", 10))
     for i in range(0, size):
         #TODO change to parsing
-        region = segment #originally multiple segments together, remove [i]
+        region = segment[i] #originally multiple segments together, remove [i]
         stats = moments.LD.Parsing.compute_pairwise_stats(region, genotypes = True)
         
         D2[i] = np.sum(stats[0])
@@ -101,6 +101,7 @@ def binStats(segment):
                   "D":D,}
                  #"name":name}
     return resultDict
+
         
 def allBinStats(vcf_list, inputPath, outputPath, maxLen = 1e7, outName = "windowStats.npy",  boundaries = 25, save = True):
     """
@@ -122,13 +123,41 @@ def allBinStats(vcf_list, inputPath, outputPath, maxLen = 1e7, outName = "window
     return resultList
 
 
-def pipeline(inputVcf, savePath, maxLen = 1e7, binSize = 25, save = True):
+def pipeline(inputVcf, savePath, maxLen, binSize, save = True):
     callset = allel.read_vcf(inputVcf, fields = ["variants/POS", "calldata/GT"])
     pos = callset["variants/POS"]
     genotype = callset["calldata/GT"]
+    genotype = allel.GenotypeArray(genotype, dtype='i1')
+    genotype012 = shapeTransform(genotype)
+
+    D2 = np.empty(shape = binSize)
+    Dz = np.empty(shape = binSize)
+    Pi2 = np.empty(shape = binSize)
+    D = np.empty(shape = binSize)
     
     df, indiceList = pandasParsing(pos, maxLen, binSize)
     assert len(indiceList) == binSize
     for i in range(binSize):
-        segment = correctSegment(genotype, indiceList, i)
-        result =  binStats(segment)
+        segment = correctSegment(genotype012, indiceList, i)
+        if segment is None:
+            D2[i] = 0
+            Dz[i] = 0
+            Pi2[i] = 0
+            D[i] = 0
+        else:
+            stats = moments.LD.Parsing.compute_pairwise_stats(segment, genotypes = True)
+            D2[i] = np.sum(stats[0])
+            Dz[i] = np.sum(stats[1])
+            Pi2[i] = np.sum(stats[2])
+            D[i] = np.sum(stats[3])
+
+    result = pd.DataFrame({
+                "D2" : D2,
+                "Dz" : Dz,
+                "Pi2" : Pi2,
+                "D" : D
+            })
+        
+    if save:
+        result.to_csv(savePath, index = False)
+        
