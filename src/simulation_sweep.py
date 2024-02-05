@@ -7,6 +7,7 @@ import sys
 import os
 import msprime 
 import argparse
+from pathlib import Path
 
 ### adapted from fwdpy11 manual on selective sweep, https://molpopgen.github.io/fwdpy11/short_vignettes/incomplete_sweep.html
 
@@ -22,6 +23,13 @@ args = parser.parse_args()
 parallel = args.parallel_seed
 yaml_input = args.yaml_param
 savePath = args.save_path
+
+### making directories, python >=3.5
+Path(savePath).mkdir(parents=True, exist_ok=True)
+Path(os.path.join(savePath, "neutral", "Trees")).mkdir(parents=True, exist_ok=True)
+Path(os.path.join(savePath, "neutral", "VCF")).mkdir(parents=True, exist_ok=True)
+Path(os.path.join(savePath, "sweep", "Trees")).mkdir(parents=True, exist_ok=True)
+Path(os.path.join(savePath, "sweep", "VCF")).mkdir(parents=True, exist_ok=True)
 
 param_yaml = yaml.safe_load(open(yaml_input))
 #/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/parameters.yaml"
