@@ -28,4 +28,4 @@ requirements.txt <br>
 
 ## Scripts that are currently under revision
 zarrMoment1000G.py <br>
-This is the functions I used to compute Dz from 1000G VCFs. It's probably not in a understandable format in its current stage. I am working on it.
+This is the functions I used to compute Dz from 1000G VCFs. It's probably not in a understandable format in its current stage.
