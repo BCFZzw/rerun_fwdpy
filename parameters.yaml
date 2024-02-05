@@ -1,0 +1,15 @@
+# parameters.yaml specification for Dz_sweep project
+# parameter defaults follow Kim and Nielsen's Linkage Disequilibrium as a Signature of Selective Sweeps published in 2005 in Figure 2
+
+simulationParam:
+  recombinationRate: 500       # 4NLp, N diploid population size, L, simulated length, p, recombination rate
+  mutationRate: 0.002          # 4Nmu, mu mutation rate per bp per generation
+  alpha: 500                   # 2Ns, s selection coefficient
+  genomeLength: 10000000       # L, simulated length
+  nSample: 500                 # N, simulated diploid population size
+
+userParam:
+  simulationTime: 100          # the maximum time for fwdpy11 to look for the fixation
+  timeAfterFixation: 0         # the amount of time (in generation) the population evolve neutrally after fixation, default is 0 (stop immediately after fixation)
+  Seed: 5553                   # RNG to keep the result the same
+  iteration: 10               # number of times the simulation is repeated as parallel
