@@ -7,12 +7,13 @@ import moments
 import argparse
 
 parser = argparse.ArgumentParser(
-                    prog='Sweep-neutral-simulation',
-                    description='This program simulates for a hard sweep and generate respective neutral simualtions'
+                    prog='Simulation-VCF-moments',
+                    description='This program takes in a VCF file and computes Hill and Robertson system of LD statistics (D^2, Dz, D, Pi2) using Aaron Ragsdale moments pacakge. Each LD statistic is calculated over equal binned distance over the simulated genomes. The results are saved in csv.gz format.'
                    )
 
-parser.add_argument('-p', '--parallel', dest = "thread", help = "Add parallel option", default = 0)
-parser.add_argument('-j', '--job-id', dest = "jobID", help = "which job to run", default = 0)
+### parallelization is currently hard-coded
+parser.add_argument('-p', '--parallel', dest = "thread", help = "Assign parallel threads", default = 0)
+parser.add_argument('-j', '--job-id', dest = "jobID", help = "Assign job ID", default = 0)
 args = parser.parse_args()
 thread = int(args.thread)
 job_id = args.jobID
