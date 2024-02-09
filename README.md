@@ -45,3 +45,4 @@ Prior to Moments calculation, there are 3 levels of window-parsing in various fu
 - [ ] The functions in zarrMoment1000G.py are composite and mashed up together. Separate into smaller and more resuable functional units. <br>
 - [ ] Combine all window-parsing in a simpler chunked array function, and perform sanity check. <br>
 - [ ] Follow "_" naming style instead of Camel, give clear variable and function name. Put more documentation. <br>
+- [ ] Add type hinting in the functions. <br>
