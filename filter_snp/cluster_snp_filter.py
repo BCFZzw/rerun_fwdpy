@@ -17,13 +17,12 @@ def find_index(arr: list, a: int) -> int:
     idx = arr_list.index(a)
     return idx
 
-def index_in_pairwise_list(arr: list, tuple_pair: list):
+def index_in_pairwise_list(arr: list, pair_ab: list) -> int:
     ###@TODO array needs to be non repeating and ascending
-    #assert type(tuple_pair) == tuple
-    assert len(tuple_pair) == 2
+    assert len(pair_ab) == 2
     assert np.array(arr).ndim == 1
-    a = tuple_pair[0]
-    b = tuple_pair[1]
+    a = pair_ab[0]
+    b = pair_ab[1]
     index_a = find_index(arr, a)
     index_b = find_index(arr, b)
     n = len(arr)
@@ -41,13 +40,7 @@ def index_in_pairwise_list(arr: list, tuple_pair: list):
     index_pairwise += index_b - index_a - 1
     return index_pairwise
 
-#def bool_index_list(pairs: int) -> list:
-#    assert n > 0
-#    index_list = [True]*pairs
-#    return index_list
-
-#def filter_clustered_SNPs
-
+###@TODO check array is sorted, strictly increasing
 def list_pairs_within_threshold(pos_array: list, threshold: int) -> list:
     ### numpy sliding window view to generate the difference faster than for loop
     ### stop when all values >= than threshold
@@ -59,10 +52,22 @@ def list_pairs_within_threshold(pos_array: list, threshold: int) -> list:
         pair_list_j = sliding_window_view(pos_array, j)[:, [0, -1]]
         pair_list_j_diff = np.diff(pair_list_j)[:, 0]
         filter_pair_j_bool = pair_list_j_diff < threshold
-        ### if no more distance withint threshold
+        ### if no more distance within threshold
         if sum(filter_pair_j_bool) == 0:
             break
         filter_pair_list.extend(pair_list_j[filter_pair_j_bool])
         j = j + 1
     return filter_pair_list
-    
+
+def bool_list_filtering(pos_arry: list, filtered_pairs: list) -> list:
+    assert len(filtered_pairs) > 0
+    assert len(pos_arry) >= 2
+    size_pos_array = len(pos_array)
+    total_pairs = size_pos_array * (size_pos_array -1)/2
+    index_list = [True]*pairs
+    for pairs in filtered_pairs:
+        index_filtered_pairs = index_in_pairwise_list(pos_arry, pairs)
+        index_list[index_filtered_pairs] = False
+    return index_list
+
+#def filter_clustered_SNPs
