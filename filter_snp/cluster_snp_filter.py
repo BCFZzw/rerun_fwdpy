@@ -1,5 +1,7 @@
 import itertools
 import numpy as np
+from numpy.lib.stride_tricks import sliding_window_view
+#from scipy.sparse import csr_array
 
 def sort_array(array_1d: list) -> np.array:
     array_np = np.array(array_1d)
@@ -15,13 +17,16 @@ def find_index(arr: list, a: int) -> int:
     idx = arr_list.index(a)
     return idx
 
-def index_in_pairwise_list(arr, a, b):
+def index_in_pairwise_list(arr: list, tuple_pair: list):
     ###@TODO array needs to be non repeating and ascending
-    arr_np = np.array(arr)
-    assert arr_np.ndim == 1
-    index_a = find_index(arr_np, a)
-    index_b = find_index(arr_np, b)
-    n = arr_np.size
+    #assert type(tuple_pair) == tuple
+    assert len(tuple_pair) == 2
+    assert np.array(arr).ndim == 1
+    a = tuple_pair[0]
+    b = tuple_pair[1]
+    index_a = find_index(arr, a)
+    index_b = find_index(arr, b)
+    n = len(arr)
     assert n >= 2
     if index_a > index_b:
         index_a, index_b = index_b, index_a
@@ -29,37 +34,35 @@ def index_in_pairwise_list(arr, a, b):
     assert index_a < index_b
     assert index_a >= 0
 
-    # assume index starts from 0
-    # iterate the number of elements before a, each - 1
-    index_pairwise = 0
-    for i in range(0, index_a):
-        index_pairwise += n - i - 1
+    # index starts from 0
+    ### simplify mathmatically, cast to int
+    index_pairwise = int(((n - 1) + (n - index_a))*index_a/2)
 
     index_pairwise += index_b - index_a - 1
     return index_pairwise
 
-def pairwise_array(array_1d_sorted: np.array) -> np.ndarray:
-    assert array_1d_sorted.ndim == 1
-    ### check if strictly increasing and sorted
-    assert sum(np.diff(array_1d_sorted) > 0)
-    pairwise_tuple_list = list(itertools.combinations(array_1d_sorted, 2))
-    pairwise_array_list = np.array([list(pairwise_tuple) for pairwise_tuple in pairwise_tuple_list])
-    num_element = len(array_1d_sorted)
-    assert np.shape(pairwise_array_list) == (num_element*(num_element -1)/2, 2)
-    return pairwise_array_list
+#def bool_index_list(pairs: int) -> list:
+#    assert n > 0
+#    index_list = [True]*pairs
+#    return index_list
 
+#def filter_clustered_SNPs
 
-def boolean_pairwise_filter_list(pairwise_2darray: np.ndarray, threshold: int) -> np.array:
-    assert pairwise_2darray.ndim == 2
-    pairwise_diff_2darray = np.diff(pairwise_2darray, axis = 1)
-    pairwise_diff_array = np.array([array[0] for array in pairwise_diff_2darray])
-    pariwise_boolean_array = pairwise_diff_array >= threshold
-    assert pariwise_boolean_array.ndim == 1
-    return pariwise_boolean_array
-
-
-def filter_pairwise_array(LD_array: np.array, boolean_array: np.array) -> np.array:
-    assert LD_array.ndim == 1
-    assert boolean_array.ndim == 1
-    assert len(LD_array) == len(boolean_array)
-    return LD_array[boolean_array]
+def list_pairs_within_threshold(pos_array: list, threshold: int) -> list:
+    ### numpy sliding window view to generate the difference faster than for loop
+    ### stop when all values larger than threshold
+    assert np.array(pos_array).ndim == 1 
+    pos_diff_array = np.diff(pos_array)
+    filter_pair_list = []
+    j = 2
+    while j <= len(pos_array):
+        ### retain the first and last position in the sliding window
+        pair_list_j = sliding_window_view(pos_diff_array, j)[:, [0, -1]]
+        pair_list_j_diff = np.diff(pair_list_j)[:, 0]
+        filter_pair_j_bool = pair_list_j_diff <= threshold
+        ### if no more distance withint threshold
+        if sum(filter_pair_j_bool) == 0:
+            break
+        filter_pair_list.extend(pair_list_j[filter_pair_j_bool])
+    return filter_pair_list
+    

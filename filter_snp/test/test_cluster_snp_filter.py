@@ -1,7 +1,7 @@
 import unittest
 import sys
 import itertools
-sys.path.insert(1, '/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/filter_snp')
+sys.path.insert(1, '/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/filter_snp')
 from cluster_snp_filter import *
 import numpy as np
 from moments import LD
@@ -63,12 +63,12 @@ class Test_cluster_snp_filter(unittest.TestCase):
     def test_index_in_sorted_list1(self):
         arr = [2, 3, 4, 9, 10]
         pairwise_tuple_list = list(itertools.combinations(arr, 2))
-        self.assertTrue(pairwise_tuple_list[index_in_pairwise_list(arr, 2, 3)] == (2, 3))
+        self.assertTrue(pairwise_tuple_list[index_in_pairwise_list(arr, (2, 3))] == (2, 3))
         
     def test_index_in_sorted_list_bigger_first(self):    
         arr = [2, 3, 4, 9, 10]
         pairwise_tuple_list = list(itertools.combinations(arr, 2))
-        self.assertTrue(pairwise_tuple_list[index_in_pairwise_list(arr, 9, 2)] == (2, 9))
+        self.assertTrue(pairwise_tuple_list[index_in_pairwise_list(arr, (9, 2))] == (2, 9))
 
     
         #self.assertTrue(pairwise_tuple_list[index_in_pairwise_LD(arr2, 4, 9)] == (4, 9))
@@ -76,6 +76,12 @@ class Test_cluster_snp_filter(unittest.TestCase):
         #self.assertTrue(pairwise_tuple_list[index_in_pairwise_LD(arr2, 10, 3)] == (3, 10))
         ### assertion errors: larger than list
         ### assertion errors: below 0
+
+    def test_list_pairs_too_close(self):
+        arr = [1, 100, 150, 180, 250, 400, 600]
+        #print(list_pairs_within_threshold(arr, 1000))
+        self.assertTrue(True)
+
 
 
 
