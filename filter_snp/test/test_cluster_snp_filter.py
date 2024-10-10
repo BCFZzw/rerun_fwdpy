@@ -4,7 +4,7 @@ import itertools
 sys.path.insert(1, '/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/filter_snp')
 from cluster_snp_filter import *
 import numpy as np
-from moments import LD
+#from moments import LD
 
 class Test_cluster_snp_filter(unittest.TestCase):
 
@@ -99,6 +99,38 @@ class Test_cluster_snp_filter(unittest.TestCase):
         arr = [1, 1001, 2001, 3001, 4001 , 5001, 6001]
         list_pairs = list_pairs_within_threshold(arr, 1000)
         self.assertTrue(list_pairs == [])
+
+    def test_list_pairs_too_close_some(self):
+        arr = [1, 1001, 2001, 2500, 3000 , 4000, 5000]
+        list_pairs = list_pairs_within_threshold(arr, 1000)
+        check_pairs_list = [[2001, 2500], [2001, 3000], [2500, 3000]]
+        for test in list_pairs:
+            self.assertTrue(np.any(check_pairs_list == test))
+        self.assertTrue(len(list_pairs) == len(check_pairs_list))
+
+    def test_bool_list_filtering_all(self):
+        arr = [1, 100, 150, 180, 250, 400, 600]
+        filtered_pairs = list_pairs_within_threshold(arr, 1000)
+        filtered_index = bool_list_filtering(arr, filtered_pairs)
+        n_arr = len(arr)
+        self.assertTrue(filtered_index == [False] * int(n_arr * (n_arr - 1)/2))
+
+    def test_bool_list_filtering_none_catch(self):
+        arr = [1, 1001, 2001, 3001, 4001 , 5001, 6001]
+        filtered_pairs = list_pairs_within_threshold(arr, 1000)
+        try:
+            bool_list_filtering(arr, filtered_pairs)
+        except AssertionError:
+            self.assertTrue(True)
+            return
+        self.assertTrue(False)
+
+    def test_bool_list_filtering_some(self):
+        arr = [1, 1001, 2001, 2500, 3000 , 4000, 5000]
+        filtered_pairs = list_pairs_within_threshold(arr, 1000)
+        filtered_index = bool_list_filtering(arr, filtered_pairs)
+        check_pairs_list = [[2001, 2500], [2001, 3000], [2500, 3000]]
+        ### checking itertools index
 
 if __name__ == '__main__':
     unittest.main()
