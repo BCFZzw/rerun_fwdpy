@@ -77,10 +77,15 @@ class Test_cluster_snp_filter(unittest.TestCase):
         ### assertion errors: larger than list
         ### assertion errors: below 0
 
-    def test_list_pairs_too_close(self):
+    def test_list_pairs_too_close_all(self):
         arr = [1, 100, 150, 180, 250, 400, 600]
-        #print(list_pairs_within_threshold(arr, 1000))
-        self.assertTrue(True)
+        list_pairs = list_pairs_within_threshold(arr, 1000)
+        ### should be the same as itertools, order is different
+        check_pairs_tuple = list(itertools.combinations(arr, 2))
+        check_pairs_list = [[i[0], i[1]] for i in check_pairs_tuple]
+        for test in list_pairs:
+            self.assertTrue(np.any(check_pairs_list == test))
+        self.assertTrue(len(list_pairs) == len(check_pairs_list))
 
 
 
