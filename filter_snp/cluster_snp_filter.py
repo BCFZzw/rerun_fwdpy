@@ -59,14 +59,14 @@ def list_pairs_within_threshold(pos_array: list, threshold: int) -> list:
         j = j + 1
     return filter_pair_list
 
-def bool_list_filtering(pos_arry: list, filtered_pairs: list) -> list:
+def bool_list_filtering(pos_array: list, filtered_pairs: list) -> list:
     assert len(filtered_pairs) > 0
-    assert len(pos_arry) >= 2
+    assert len(pos_array) >= 2
     size_pos_array = len(pos_array)
     total_pairs = size_pos_array * (size_pos_array -1)/2
     index_list = [True]*pairs
     for pairs in filtered_pairs:
-        index_filtered_pairs = index_in_pairwise_list(pos_arry, pairs)
+        index_filtered_pairs = index_in_pairwise_list(pos_array, pairs)
         index_list[index_filtered_pairs] = False
     return index_list
 
