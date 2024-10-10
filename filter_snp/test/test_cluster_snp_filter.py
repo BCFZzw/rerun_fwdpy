@@ -144,12 +144,8 @@ class Test_cluster_snp_filter(unittest.TestCase):
     def test_bool_list_filtering_none_catch(self):
         arr = [1, 1001, 2001, 3001, 4001 , 5001, 6001]
         filtered_pairs = list_pairs_within_threshold(arr, 1000)
-        try:
-            bool_list_filtering(arr, filtered_pairs)
-        except AssertionError:
-            self.assertTrue(True)
-            return
-        self.assertTrue(False)
+        filtered_index = bool_list_filtering(arr, filtered_pairs)
+        self.assertTrue(np.all(filtered_index))
 
     def test_bool_list_filtering_some(self):
         arr = [1, 1001, 2001, 2500, 3000 , 4000, 5000]

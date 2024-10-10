@@ -83,11 +83,12 @@ def bool_list_filtering(pos_array: list, filtered_pairs: list) -> list:
     False at the indices for filtered pairs, True for retained pairs.
     Assertion error if any pairs is not found in the given array.
     """
-    assert len(filtered_pairs) > 0
     assert len(pos_array) >= 2
     size_pos_array = len(pos_array)
     total_pairs = int(size_pos_array * (size_pos_array -1)/2)
     index_list = [True]*total_pairs
+    if (len(filtered_pairs) == 0):
+        return index_list
     for pairs in filtered_pairs:
         index_filtered_pairs = index_in_pairwise_list(pos_array, pairs)
         index_list[index_filtered_pairs] = False

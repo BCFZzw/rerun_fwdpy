@@ -44,7 +44,9 @@ class Test_moments_cluster_snp_filter(unittest.TestCase):
         D2_pw, _, _, _ = LD.Parsing.compute_pairwise_stats(G, genotypes = True)
         pos_arr = [1, 1001, 2001]
         filtered_pairs = list_pairs_within_threshold(pos_arr, 1000)
-        self.assertTrue(len(filtered_pairs) == 0)
+        filtered_index = bool_list_filtering(pos_arr, filtered_pairs)
+        filtered_D2_pw = D2_pw[filtered_index]
+        self.assertTrue(np.all(filtered_D2_pw == D2_pw))
 
     def test_filtering_3_pos_all_filtered(self):
         L = 3
