@@ -1,4 +1,3 @@
-import itertools
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
@@ -25,7 +24,8 @@ def find_index(arr: list, a: int) -> int:
 
 def index_in_pairwise_list(arr: list, pair_ab: list) -> int:
     """
-    Find the index of a given pair [a, b] in the list of a pairwise comparison of an array. 
+    Find the index of a given pair [a, b] in the list of a pairwise comparison 
+    of a sorted array. 
     The order of the list is the same as itertools.combinations(, 2).
     Assertion error if the query pair is not found in the given array.
     """
@@ -53,7 +53,7 @@ def index_in_pairwise_list(arr: list, pair_ab: list) -> int:
 
 def list_pairs_within_threshold(pos_array: list, threshold: int) -> list:
     """
-    Filter any position pairs < a distance defined by the user.
+    Filter any sorted position pairs < a distance defined by the user.
     The filtered pairs are listed in a list: [[pos_a, pos_b], [pos_c, pos_d] ...].
     Return an empty list if no pairs are filtered.
     """
