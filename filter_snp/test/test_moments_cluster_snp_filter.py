@@ -23,6 +23,42 @@ class Test_moments_cluster_snp_filter(unittest.TestCase):
         self.assertTrue(np.all(filtered_D2_pw == [D2_pw[1]]))
         self.assertTrue(np.all(filtered_D2_pw == D2_check))
 
+    def test2_filtering_3_pos(self):
+        L = 3
+        n = 5
+        np.random.seed(5553)
+        G = np.random.randint(3, size=L * n).reshape(L, n)
+        D2_pw, _, _, _ = LD.Parsing.compute_pairwise_stats(G, genotypes = True)
+        pos_arr = [1, 400, 1400]
+        ### [1, 1400], [400, 1400] remains
+        filtered_pairs = list_pairs_within_threshold(pos_arr, 1000)
+        filtered_index = bool_list_filtering(pos_arr, filtered_pairs)
+        filtered_D2_pw = D2_pw[filtered_index]
+        self.assertTrue(np.all(filtered_D2_pw == [D2_pw[1:]]))
+
+    def test_filtering_3_pos_none_filtered(self):
+        L = 3
+        n = 5
+        np.random.seed(5553)
+        G = np.random.randint(3, size=L * n).reshape(L, n)
+        D2_pw, _, _, _ = LD.Parsing.compute_pairwise_stats(G, genotypes = True)
+        pos_arr = [1, 1001, 2001]
+        filtered_pairs = list_pairs_within_threshold(pos_arr, 1000)
+        self.assertTrue(len(filtered_pairs) == 0)
+
+    def test_filtering_3_pos_all_filtered(self):
+        L = 3
+        n = 5
+        np.random.seed(5553)
+        G = np.random.randint(3, size=L * n).reshape(L, n)
+        D2_pw, _, _, _ = LD.Parsing.compute_pairwise_stats(G, genotypes = True)
+        pos_arr = [1, 20, 30]
+        filtered_pairs = list_pairs_within_threshold(pos_arr, 1000)
+        filtered_index = bool_list_filtering(pos_arr, filtered_pairs)
+        filtered_D2_pw = D2_pw[filtered_index]
+        ### becomes a boolean array, it is better to not compute LD at all
+        self.assertTrue(np.all(filtered_D2_pw == []))
+
 if __name__ == '__main__':
     unittest.main()
 
