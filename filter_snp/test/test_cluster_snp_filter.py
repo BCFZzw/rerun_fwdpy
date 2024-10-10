@@ -70,13 +70,6 @@ class Test_cluster_snp_filter(unittest.TestCase):
         pairwise_tuple_list = list(itertools.combinations(arr, 2))
         self.assertTrue(pairwise_tuple_list[index_in_pairwise_list(arr, (9, 2))] == (2, 9))
 
-    
-        #self.assertTrue(pairwise_tuple_list[index_in_pairwise_LD(arr2, 4, 9)] == (4, 9))
-        #self.assertTrue(pairwise_tuple_list[index_in_pairwise_LD(arr2, 9, 10)] == (9, 10))
-        #self.assertTrue(pairwise_tuple_list[index_in_pairwise_LD(arr2, 10, 3)] == (3, 10))
-        ### assertion errors: larger than list
-        ### assertion errors: below 0
-
     def test_list_pairs_too_close_all(self):
         arr = [1, 100, 150, 180, 250, 400, 600]
         list_pairs = list_pairs_within_threshold(arr, 1000)
