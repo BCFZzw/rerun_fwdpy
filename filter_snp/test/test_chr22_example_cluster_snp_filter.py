@@ -32,15 +32,27 @@ class Test_chr22_example_cluster_snp_filter(unittest.TestCase):
     gt_unrelated = gt_region.take(loc_samples_unrelated, axis=1)
     gt_unrelated_012 = gt_unrelated.to_n_alt(fill=-1)
 
+    D2_pw, _, _, _ = LD.Parsing.compute_pairwise_stats(gt_unrelated_012, 
+    genotypes = True)
+
     def test_filtering_5bp_last_removed(self):
         filtered_pairs = list_pairs_within_threshold(self.pos_first_10, 5)
         filtered_index = bool_list_filtering(self.pos_first_10, filtered_pairs)
-        D2_pw, _, _, _ = LD.Parsing.compute_pairwise_stats(self.gt_unrelated_012, 
-        genotypes = True)
-        filtered_D2_pw = D2_pw[filtered_index]
-        self.assertTrue(len(filtered_D2_pw) == (len(D2_pw) -1))
-        self.assertTrue(np.all(filtered_D2_pw == D2_pw[:-1]))
+        filtered_D2_pw = self.D2_pw[filtered_index]
+        self.assertTrue(len(filtered_D2_pw) == (len(self.D2_pw) -1))
+        self.assertTrue(np.all(filtered_D2_pw == self.D2_pw[:-1]))
 
+    def test_filtering_2bp_none_removed(self):
+        filtered_pairs = list_pairs_within_threshold(self.pos_first_10, 2)
+        filtered_index = bool_list_filtering(self.pos_first_10, filtered_pairs)
+        filtered_D2_pw = self.D2_pw[filtered_index]
+        self.assertTrue(np.all(filtered_D2_pw == self.D2_pw))
+    
+    def test_filtering_1000000bp_all_removed(self):
+        filtered_pairs = list_pairs_within_threshold(self.pos_first_10, 1000000)
+        filtered_index = bool_list_filtering(self.pos_first_10, filtered_pairs)
+        filtered_D2_pw = self.D2_pw[filtered_index]
+        self.assertTrue(np.all(filtered_D2_pw == []))
 
 if __name__ == '__main__':
     unittest.main()
