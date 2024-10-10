@@ -4,7 +4,6 @@ import itertools
 sys.path.insert(1, '/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/filter_snp')
 from cluster_snp_filter import *
 import numpy as np
-#from moments import LD
 
 class Test_cluster_snp_filter(unittest.TestCase):
 
@@ -60,6 +59,15 @@ class Test_cluster_snp_filter(unittest.TestCase):
         arr = np.array([0, 1, 1, 3, 4, 5])
         self.assertTrue(find_index(arr, 1) == 1)
 
+    def test_index_in_sorted_list_non_sorted_catch(self):
+        arr = [2, 3, 4, 10, 9]
+        try:
+            index_in_pairwise_list(arr, (2, 3))
+        except AssertionError:
+            self.assertTrue(True)
+            return
+        self.assertTrue(False)
+
     def test_index_in_sorted_list1(self):
         arr = [2, 3, 4, 9, 10]
         pairwise_tuple_list = list(itertools.combinations(arr, 2))
@@ -69,6 +77,24 @@ class Test_cluster_snp_filter(unittest.TestCase):
         arr = [2, 3, 4, 9, 10]
         pairwise_tuple_list = list(itertools.combinations(arr, 2))
         self.assertTrue(pairwise_tuple_list[index_in_pairwise_list(arr, (9, 2))] == (2, 9))
+
+    def test_list_pairs_too_close_non_sorted(self):
+        arr = [1, 100, 150, 250, 180, 400, 600]
+        try:
+            list_pairs = list_pairs_within_threshold(arr, 1000)
+        except AssertionError:
+            self.assertTrue(True)
+            return
+        self.assertTrue(False)
+
+    def test_list_pairs_too_close_not_found(self):
+        arr = [1, 100, 150, 250, 180, 400, 600]
+        try:
+            list_pairs = list_pairs_within_threshold(arr, 1000)
+        except AssertionError:
+            self.assertTrue(True)
+            return
+        self.assertTrue(False)
 
     def test_list_pairs_too_close_all(self):
         arr = [1, 100, 150, 180, 250, 400, 600]
