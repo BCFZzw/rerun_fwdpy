@@ -29,9 +29,8 @@ def index_in_pairwise_list(arr: list, pair_ab: list) -> int:
     The order of the list is the same as itertools.combinations(, 2).
     Assertion error if the query pair is not found in the given array.
     """
-    ###@TODO array needs to be non repeating and ascending
     assert len(pair_ab) == 2
-    assert np.array(arr).ndim == 1
+    assert np.all(sort_array(arr) == arr)
     a = pair_ab[0]
     b = pair_ab[1]
     ### Assertion error raised if element not found.
@@ -52,15 +51,16 @@ def index_in_pairwise_list(arr: list, pair_ab: list) -> int:
     index_pairwise += index_b - index_a - 1
     return index_pairwise
 
-###@TODO check array is sorted, strictly increasing
 def list_pairs_within_threshold(pos_array: list, threshold: int) -> list:
     """
     Filter any position pairs < a distance defined by the user.
     The filtered pairs are listed in a list: [[pos_a, pos_b], [pos_c, pos_d] ...].
     Return an empty list if no pairs are filtered.
     """
-    ### numpy sliding window view to generate the difference faster than for loop
-    assert np.array(pos_array).ndim == 1 
+    ### using numpy sliding window view to get all the pairs
+    assert np.all(sort_array(pos_array) == pos_array)
+    assert min(pos_array) > 0
+    assert threshold > 0
     filter_pair_list = []
     j = 2
     while j <= len(pos_array):
@@ -68,7 +68,7 @@ def list_pairs_within_threshold(pos_array: list, threshold: int) -> list:
         pair_list_j = sliding_window_view(pos_array, j)[:, [0, -1]]
         pair_list_j_diff = np.diff(pair_list_j)[:, 0]
         filter_pair_j_bool = pair_list_j_diff < threshold
-        ### if no more distance within threshold
+        ### if no more pairs need to be filtered
         if sum(filter_pair_j_bool) == 0:
             break
         filter_pair_list.extend(pair_list_j[filter_pair_j_bool])
@@ -81,6 +81,7 @@ def bool_list_filtering(pos_array: list, filtered_pairs: list) -> list:
     The boolean array has the size of total number of pairs from the position array.
     The order is the same as itertools.combinations(, 2) and moments.LD calculations.
     False at the indices for filtered pairs, True for retained pairs.
+    Assertion error if any pairs is not found in the given array.
     """
     assert len(filtered_pairs) > 0
     assert len(pos_array) >= 2
