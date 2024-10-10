@@ -87,7 +87,7 @@ class Test_cluster_snp_filter(unittest.TestCase):
             self.assertTrue(np.any(check_pairs_list == test))
         self.assertTrue(len(list_pairs) == len(check_pairs_list))
 
-    def test_list_pairs_too_close_inclusive(self):
+    def test_list_pairs_too_close_exclusive(self):
         arr = [1, 100, 150, 399, 400 , 401, 1400]
         list_pairs = list_pairs_within_threshold(arr, 1000)
         ### should be the same as itertools, order is different
@@ -97,10 +97,15 @@ class Test_cluster_snp_filter(unittest.TestCase):
         check_pairs_list.remove([100, 1400])
         check_pairs_list.remove([150, 1400])
         check_pairs_list.remove([399, 1400])
+        check_pairs_list.remove([400, 1400])
         for test in list_pairs:
             self.assertTrue(np.any(check_pairs_list == test))
         self.assertTrue(len(list_pairs) == len(check_pairs_list))
 
+    def test_list_pairs_too_close_none(self):
+        arr = [1, 1001, 2001, 3001, 4001 , 5001, 6001]
+        list_pairs = list_pairs_within_threshold(arr, 1000)
+        self.assertTrue(list_pairs == [])
 
 if __name__ == '__main__':
     unittest.main()

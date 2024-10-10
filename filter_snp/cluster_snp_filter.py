@@ -50,7 +50,7 @@ def index_in_pairwise_list(arr: list, tuple_pair: list):
 
 def list_pairs_within_threshold(pos_array: list, threshold: int) -> list:
     ### numpy sliding window view to generate the difference faster than for loop
-    ### stop when all values larger than threshold
+    ### stop when all values >= than threshold
     assert np.array(pos_array).ndim == 1 
     filter_pair_list = []
     j = 2
@@ -58,7 +58,7 @@ def list_pairs_within_threshold(pos_array: list, threshold: int) -> list:
         ### retain the first and last position in the sliding window
         pair_list_j = sliding_window_view(pos_array, j)[:, [0, -1]]
         pair_list_j_diff = np.diff(pair_list_j)[:, 0]
-        filter_pair_j_bool = pair_list_j_diff <= threshold
+        filter_pair_j_bool = pair_list_j_diff < threshold
         ### if no more distance withint threshold
         if sum(filter_pair_j_bool) == 0:
             break
