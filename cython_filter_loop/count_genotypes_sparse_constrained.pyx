@@ -38,15 +38,30 @@ cpdef tally_sparse(dict G1, dict G2, int n, missing=False):
         n00 = n-n22-n21-n20-n12-n11-n10-n02-n01
     return (n22, n21, n20, n12, n11, n10, n02, n01, n00)
 
-
-
-cpdef count_genotypes_sparse_distance_constrained(dict G_dict,  int n, np.ndarray[np.int32_t, ndim=1] pos_array, int threshold, missing=False):
+cpdef count_genotypes_sparse(dict G_dict, int n, missing=False):
     """
-    
+    Similar to count_genotypes, but using the sparse genotype representation instead
     """
     cdef int L = len(G_dict)
     
     cdef np.ndarray[np.int32_t, ndim=2] Counts = np.empty((L*(L-1)//2, 9), dtype=np.int32)
+    cdef int c = 0
+    cdef int i,j
+    
+    for i in range(L-1):
+        for j in range(i+1,L):
+            Counts[c] = tally_sparse(G_dict[i], G_dict[j], n, missing=missing)
+            c += 1
+    return Counts
+
+
+cpdef count_genotypes_distance_constrained(np.ndarray[np.int32_t, ndim=1] pos_array, int threshold):
+    """
+    
+    """
+    cdef int L = len(pos_array)
+    
+    cdef np.ndarray[np.uint8_t, ndim=1] Bools = np.ones((L*(L-1)//2), dtype=np.bool_)
     cdef int c = 0
     cdef int i,j
     cdef int pair_distance
@@ -56,6 +71,6 @@ cpdef count_genotypes_sparse_distance_constrained(dict G_dict,  int n, np.ndarra
             pair_distance = pos_array[j] - pos_array[i]
             if (pair_distance < threshold):
                 continue
-            Counts[c] = tally_sparse(G_dict[i], G_dict[j], n, missing=missing)
+            Bools[c] = False
             c += 1
-    return Counts
+    return Bools
