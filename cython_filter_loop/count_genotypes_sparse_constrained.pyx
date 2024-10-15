@@ -69,7 +69,7 @@ cpdef count_genotypes_distance_constrained(np.ndarray[np.int32_t, ndim=1] pos_ar
     for i in range(L-1):
         for j in range(i+1,L):
             pair_distance = pos_array[j] - pos_array[i]
-            if (pair_distance < threshold):
+            if (pair_distance <= threshold):
                 Bools[c] = False
             c += 1
     return Bools
