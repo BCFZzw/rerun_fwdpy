@@ -57,7 +57,7 @@ cpdef count_genotypes_sparse(dict G_dict, int n, missing=False):
 
 cpdef count_genotypes_distance_constrained(np.ndarray[np.int32_t, ndim=1] pos_array, int threshold):
     """
-    
+    Determine which pairs to filter based on their distance and threshold.
     """
     cdef int L = len(pos_array)
     
@@ -70,8 +70,6 @@ cpdef count_genotypes_distance_constrained(np.ndarray[np.int32_t, ndim=1] pos_ar
         for j in range(i+1,L):
             pair_distance = pos_array[j] - pos_array[i]
             if (pair_distance < threshold):
-                c += 1
-                continue
-            Bools[c] = False
+                Bools[c] = False
             c += 1
     return Bools
