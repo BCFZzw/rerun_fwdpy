@@ -2,6 +2,7 @@ import pandas as pd
 import allel
 import zarr
 import numpy as np
+#import dask
 
 def _read_panel(panel_file):
     """
@@ -29,8 +30,46 @@ def locate_panel_individuals(callset, panel_file, pop = None, super_pop = None):
         raise ValueError("Sampled population/superpopulation not found in panel.")
     samples_callset_index = np.where(np.in1d(samples_list, panel_df["sample"]))[0]
     ### no one missing
-    assert -1 not in samples_callset_index
+    if -1 in samples_callset_index:
+        raise ValueError("Some panel individuals are missing in the vcf data.")
     panel_df['callset_index'] = samples_callset_index
     loc_samples = panel_df.callset_index.values
     return loc_samples
 
+def locate_genotype_region(pos_array, pos_start: int, pos_end: int):
+    if pos_start is None:
+        pos_start = 1
+    if pos_end is None:
+        pos_end = max(pos_array) + 1
+    assert pos_end > pos_start
+    try:
+        loc_region = pos_array.locate_range(pos_start, pos_end)
+    except KeyError:
+        raise KeyError("No variants in the given region!")
+    return loc_region
+
+
+def _read_zarr_callset(zarr_path):
+    callset = zarr.open_group(zarr_path, mode='r')
+    genotype_zarr = callset['calldata/GT']
+    pos_array = allel.SortedIndex(callset['variants/POS'])
+    return callset, genotype_zarr, pos_array
+
+
+def scikit_allele_parse_genotypes(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None):
+    callset, genotype_zarr, pos_array = _read_zarr_callset(zarr_path)
+    genotype_dask = allel.GenotypeDaskArray(genotype_zarr)
+
+    if (pos_start != None) or (pos_end != None):
+        loc_region = locate_genotype_region(pos_array, pos_start, pos_end)
+        pos_array = pos_array[loc_region]
+        ### when using indices: take, when using boolean: compress
+        genotype_dask = genotype_dask.take(loc_region, axis = 0)
+
+    if panel_file is not None:
+        loc_samples = locate_panel_individuals(callset, panel_file, pop, super_pop)
+        genotype_dask = genotype_dask.take(loc_samples, axis = 1)
+        
+    genotype_012_dask = genotype_dask.count_alleles()
+    
+    return genotype_012_dask, pos_array
