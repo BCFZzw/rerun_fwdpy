@@ -11,6 +11,7 @@ class Test_parse_vcf(unittest.TestCase):
     panel_file = "/home/alouette/projects/ctb-sgravel/alouette/1000Genome/population_panel/integrated_call_samples_v3.20130502.2504.ALL.panel"
     zarr_path = "/home/alouette/projects/ctb-sgravel/data/30x1000G_biallelic_strict_masked/zarrFormat/chr22"
     callset = zarr.open_group(zarr_path, mode='r')
+    pos_array = allel.SortedIndex(callset['variants/POS'])
     panel_df = pd.read_csv(panel_file, sep = "\t")
 
     def test_catch_pop_superpop_both_specified(self):
@@ -33,6 +34,29 @@ class Test_parse_vcf(unittest.TestCase):
         loc_samples = locate_panel_individuals(self.callset, self.panel_file)
         self.assertTrue(len(loc_samples) == 2504)
 
+    def test_catch_no_snp_in_range(self):
+        with self.assertRaises(KeyError):
+            locate_genotype_region(self.pos_array, 0, 1)
+
+    def test_catch_reverse_order(self):
+        with self.assertRaises(AssertionError):
+            locate_genotype_region(self.pos_array, 100000000, 1)
+
+    def test_negative_floating_value_works(self):
+        loc_region = locate_genotype_region(self.pos_array, -1, 100000000.1)
+        self.assertTrue(max(self.pos_array[loc_region]) <= 100000000.1)
+
+    def test_maximum_value_all_region(self):
+        loc_region = locate_genotype_region(self.pos_array, pos_start = None, pos_end = max(self.pos_array))
+        self.assertTrue(np.all(self.pos_array[loc_region] == self.pos_array))
+
+    def test_min_value_all_region(self):
+        loc_region = locate_genotype_region(self.pos_array, pos_start = 0, pos_end = None)
+        self.assertTrue(np.all(self.pos_array[loc_region] == self.pos_array))
+
+    def test_none_all_region(self):
+        loc_region = locate_genotype_region(self.pos_array, pos_start = None, pos_end = None)
+        self.assertTrue(np.all(self.pos_array[loc_region] == self.pos_array))
 
 
 if __name__ == '__main__':
