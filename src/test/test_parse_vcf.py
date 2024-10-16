@@ -12,26 +12,27 @@ class Test_parse_vcf(unittest.TestCase):
     zarr_path = "/home/alouette/projects/ctb-sgravel/data/30x1000G_biallelic_strict_masked/zarrFormat/chr22"
     callset = zarr.open_group(zarr_path, mode='r')
     pos_array = allel.SortedIndex(callset['variants/POS'])
+    callset_samples = callset["samples"]
     panel_df = pd.read_csv(panel_file, sep = "\t")
 
     def test_catch_pop_superpop_both_specified(self):
         with self.assertRaises(ValueError):
-            locate_panel_individuals(self.callset, self.panel_file, pop = "GBR", super_pop = "EUR")
+            locate_panel_individuals(self.callset_samples, self.panel_file, pop = "GBR", super_pop = "EUR")
 
 
     def test_catch_pop_not_exist(self):
         with self.assertRaises(ValueError):
-            locate_panel_individuals(self.callset, self.panel_file, pop = "ABE")
+            locate_panel_individuals(self.callset_samples, self.panel_file, pop = "ABE")
             
 
     def test_subset_AFR(self):
-        loc_samples = locate_panel_individuals(self.callset, self.panel_file, super_pop = "AFR")
+        loc_samples = locate_panel_individuals(self.callset_samples, self.panel_file, super_pop = "AFR")
         self.assertTrue(len(loc_samples) == sum(self.panel_df.super_pop == "AFR"))
         for ind in self.callset["samples"][loc_samples]:
             self.assertTrue(self.panel_df[self.panel_df["sample"] == ind]["super_pop"].tolist()[0] == "AFR")
 
     def test_all_panel(self):
-        loc_samples = locate_panel_individuals(self.callset, self.panel_file)
+        loc_samples = locate_panel_individuals(self.callset_samples, self.panel_file)
         self.assertTrue(len(loc_samples) == 2504)
 
     def test_catch_no_snp_in_range(self):

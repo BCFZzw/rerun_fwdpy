@@ -14,12 +14,12 @@ def _read_panel(panel_file):
     assert "super_pop" in panel_df.columns
     return panel_df
 
-def locate_panel_individuals(callset, panel_file, pop = None, super_pop = None):
+def locate_panel_individuals(callset_samples, panel_file, pop = None, super_pop = None):
     """
     Locate individuals specified in the panel files in the VCF callset data. Individuals belonging to a specific population or superpopulation can be sampled.
     """
     panel_df = _read_panel(panel_file)
-    samples_list = list(callset["samples"][:]) 
+    samples_list = list(callset_samples[:]) 
     if (pop is not None) and (super_pop is not None):
         raise ValueError("One of population or superpopulation can be specified. Not Both.")
     if (pop is not None):
@@ -37,6 +37,9 @@ def locate_panel_individuals(callset, panel_file, pop = None, super_pop = None):
     return loc_samples
 
 def locate_genotype_region(pos_array, pos_start: int, pos_end: int):
+    """
+    Locate the indices of a region in the genotype position array.
+    """
     if pos_start is None:
         pos_start = 1
     if pos_end is None:
@@ -50,24 +53,29 @@ def locate_genotype_region(pos_array, pos_start: int, pos_end: int):
 
 
 def _read_zarr_callset(zarr_path):
+    """
+    Read zarr callset, expect the genotype to be under "calldata/GT", 
+    positions under "variants/POS", and samples under "samples"
+    """
     callset = zarr.open_group(zarr_path, mode='r')
     genotype_zarr = callset['calldata/GT']
     pos_array = allel.SortedIndex(callset['variants/POS'])
-    return callset, genotype_zarr, pos_array
+    callset_samples = callset["samples"]
+    return callset, genotype_zarr, pos_array, callset_samples
 
 
 def scikit_allele_parse_genotypes(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None):
-    callset, genotype_zarr, pos_array = _read_zarr_callset(zarr_path)
+    callset, genotype_zarr, pos_array, callset_samples = _read_zarr_callset(zarr_path)
     genotype_dask = allel.GenotypeDaskArray(genotype_zarr)
 
-    if (pos_start != None) or (pos_end != None):
+    if (pos_start is not None) or (pos_end is not None):
         loc_region = locate_genotype_region(pos_array, pos_start, pos_end)
         pos_array = pos_array[loc_region]
         ### when using indices: take, when using boolean: compress
         genotype_dask = genotype_dask.take(loc_region, axis = 0)
 
     if panel_file is not None:
-        loc_samples = locate_panel_individuals(callset, panel_file, pop, super_pop)
+        loc_samples = locate_panel_individuals(callset_samples, panel_file, pop, super_pop)
         genotype_dask = genotype_dask.take(loc_samples, axis = 1)
         
     genotype_012_dask = genotype_dask.count_alleles()
