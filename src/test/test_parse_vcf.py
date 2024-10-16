@@ -19,12 +19,10 @@ class Test_parse_vcf(unittest.TestCase):
         with self.assertRaises(ValueError):
             locate_panel_individuals(self.callset_samples, self.panel_file, pop = "GBR", super_pop = "EUR")
 
-
     def test_catch_pop_not_exist(self):
         with self.assertRaises(ValueError):
             locate_panel_individuals(self.callset_samples, self.panel_file, pop = "ABE")
             
-
     def test_subset_AFR(self):
         loc_samples = locate_panel_individuals(self.callset_samples, self.panel_file, super_pop = "AFR")
         self.assertTrue(len(loc_samples) == sum(self.panel_df.super_pop == "AFR"))
@@ -59,6 +57,18 @@ class Test_parse_vcf(unittest.TestCase):
         loc_region = locate_genotype_region(self.pos_array, pos_start = None, pos_end = None)
         self.assertTrue(np.all(self.pos_array[loc_region] == self.pos_array))
 
+    def test_inclusive_region(self):
+        loc_region = locate_genotype_region(self.pos_array, pos_start = None, pos_end = 10666327)
+        self.assertTrue(len(range(loc_region.stop)[loc_region]) == 2)
+
+    def test_genotype_parsing(self):
+        genotype_012_dask, pos_array = scikit_allele_parse_genotypes(self.zarr_path, pos_start = None, pos_end = 10666327, panel_file = self.panel_file)
+        self.assertTrue(len(pos_array) == 2)
+        loc_samples = locate_panel_individuals(self.callset_samples, self.panel_file)
+        test_genotype = allel.GenotypeArray(self.callset['calldata/GT'][:2])
+        test_genotype = test_genotype.take(loc_samples, axis = 1)
+        test_genotype_012 = test_genotype.count_alleles()
+        self.assertTrue(np.all(test_genotype_012[0] == genotype_012_dask[0]))
 
 if __name__ == '__main__':
     unittest.main()
