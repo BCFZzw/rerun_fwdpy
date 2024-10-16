@@ -59,13 +59,14 @@ def _read_zarr_callset(zarr_path):
     """
     callset = zarr.open_group(zarr_path, mode='r')
     genotype_zarr = callset['calldata/GT']
-    pos_array = allel.SortedIndex(callset['variants/POS'])
+    callset_pos = callset['variants/POS']
     callset_samples = callset["samples"]
     return callset, genotype_zarr, pos_array, callset_samples
 
 
 def scikit_allele_parse_genotypes(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None):
-    callset, genotype_zarr, pos_array, callset_samples = _read_zarr_callset(zarr_path)
+    callset, genotype_zarr, callset_pos, callset_samples = _read_zarr_callset(zarr_path)
+    pos_array = allel.SortedIndex(callset_pos)
     genotype_dask = allel.GenotypeDaskArray(genotype_zarr)
 
     if (pos_start is not None) or (pos_end is not None):
