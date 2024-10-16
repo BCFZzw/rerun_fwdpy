@@ -26,6 +26,12 @@ class Test_parse_vcf(unittest.TestCase):
     def test_subset_AFR(self):
         loc_samples = locate_panel_individuals(self.callset, self.panel_file, super_pop = "AFR")
         self.assertTrue(len(loc_samples) == sum(self.panel_df.super_pop == "AFR"))
+        for ind in self.callset["samples"][loc_samples]:
+            self.assertTrue(self.panel_df[self.panel_df["sample"] == ind]["super_pop"].tolist()[0] == "AFR")
+
+    def test_all_panel(self):
+        loc_samples = locate_panel_individuals(self.callset, self.panel_file)
+        self.assertTrue(len(loc_samples) == 2504)
 
 
 
