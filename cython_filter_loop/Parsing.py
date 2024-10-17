@@ -362,7 +362,7 @@ def _check_valid_genotype_matrix(G, genotypes):
         raise ValueError("Genotype matrix is too large, consider parallelizing LD calc")
 
 
-def compute_pairwise_stats(Gs, genotypes=True):
+def compute_pairwise_stats(Gs, pos_array = None, genotypes=True, distance_constrained = 0):
     """
     Computes :math:`D^2`, :math:`Dz`, :math:`\\pi_2`, and :math:`D` for every
     pair of loci within a block of SNPs, coded as a genotype matrix.
@@ -390,6 +390,19 @@ def compute_pairwise_stats(Gs, genotypes=True):
         G_dict, any_missing = _sparsify_haplotype_matrix(Gs)
         Counts = spt.count_haplotypes_sparse(G_dict, n, missing=any_missing)
 
+    if (distance_constrained > 0) and (pos_array is not None):
+        assert(len(pos_array) == len(G_dict))
+        ### assert dtype is np.int32 for input
+        assert pos_array.dtype == np.int32
+        Bools = spt.distance_constrained_pairs_filtering(pos_array, distance_constrained)
+        assert(len(Bools) == len(Counts))
+        Counts = Counts[Bools]
+
+    if (distance_constrained > 0) and (pos_array is None):
+        raise ValueError(
+            f"Calculate LD for the distance constrained pairs, but the position array is not given."
+        )
+
     if genotypes:
         D = gcs.compute_D(Counts)
         D2 = gcs.compute_D2(Counts)
@@ -404,7 +417,7 @@ def compute_pairwise_stats(Gs, genotypes=True):
     return D2, Dz, pi2, D
 
 
-def compute_average_stats(Gs, genotypes=True):
+def compute_average_stats(Gs, pos_array = None, genotypes=True, distance_constrained = 0):
     """
     Takes the outputs of ``compute_pairwise_stats`` and returns
     the average value for each statistic.
@@ -415,7 +428,7 @@ def compute_average_stats(Gs, genotypes=True):
     :param genotypes: If True, use 0, 1, 2 genotypes. If False,
         use 0, 1 phased haplotypes.
     """
-    D2, Dz, pi2, D = compute_pairwise_stats(Gs, genotypes=True)
+    D2, Dz, pi2, D = compute_pairwise_stats(Gs, pos_array, genotypes, distance_constrained)
     return np.mean(D2), np.mean(Dz), np.mean(pi2), np.mean(D)
 
 
