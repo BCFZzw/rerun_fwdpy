@@ -4,6 +4,7 @@ import sys
 sys.path.insert(1, '/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/src')
 from parse_vcf import *
 import pandas as pd
+import moments.LD
 
 
 class Test_parse_vcf(unittest.TestCase):
@@ -70,6 +71,15 @@ class Test_parse_vcf(unittest.TestCase):
         test_genotype = test_genotype.take(loc_samples, axis = 1)
         test_genotype_012 = test_genotype.to_n_alt(fill=-1)
         self.assertTrue(np.all(test_genotype_012 == genotype_012_dask))
+
+    def test_connecting_with_moments(self):
+        genotype_012, pos_array = scikit_allele_parse_genotypes(self.zarr_path, pos_start = None, pos_end = 10666327, panel_file = self.panel_file)
+        D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(genotype_012, genotypes = True)
+    
+    def test_connecting_with_moments_constrained(self):
+        threshold = 1
+        genotype_012, pos_array = scikit_allele_parse_genotypes(self.zarr_path, pos_start = None, pos_end = 10666327, panel_file = self.panel_file)
+        D2_pw_subset, Dz_pw_subset, pi2_pw_subset, D_pw_subset = moments.LD.Parsing.compute_pairwise_stats(genotype_012, pos_array, genotypes = True, distance_constrained = threshold)
 
 if __name__ == '__main__':
     unittest.main()

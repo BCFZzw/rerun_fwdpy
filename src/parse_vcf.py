@@ -78,7 +78,7 @@ def scikit_allele_parse_genotypes(zarr_path, pos_start = None, pos_end = None, p
     if panel_file is not None:
         loc_samples = locate_panel_individuals(callset_samples, panel_file, pop, super_pop)
         genotype_dask = genotype_dask.take(loc_samples, axis = 1)
-    
-    genotype_012 = genotype_dask.to_n_alt(fill=-1)
-    
-    return genotype_012, pos_array
+
+    genotype_012 = genotype_dask.compute().to_n_alt(fill=-1)
+    pos_array_np = np.array(pos_array) # required numpy by constrain function
+    return genotype_012, pos_array_np
