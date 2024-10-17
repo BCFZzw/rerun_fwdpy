@@ -26,6 +26,7 @@ class Test_parse_vcf(unittest.TestCase):
     def test_subset_AFR(self):
         loc_samples = locate_panel_individuals(self.callset_samples, self.panel_file, super_pop = "AFR")
         self.assertTrue(len(loc_samples) == sum(self.panel_df.super_pop == "AFR"))
+        self.assertTrue(len(loc_samples) == 661)
         for ind in self.callset["samples"][loc_samples]:
             self.assertTrue(self.panel_df[self.panel_df["sample"] == ind]["super_pop"].tolist()[0] == "AFR")
 
@@ -67,8 +68,8 @@ class Test_parse_vcf(unittest.TestCase):
         loc_samples = locate_panel_individuals(self.callset_samples, self.panel_file)
         test_genotype = allel.GenotypeArray(self.callset['calldata/GT'][:2])
         test_genotype = test_genotype.take(loc_samples, axis = 1)
-        test_genotype_012 = test_genotype.count_alleles()
-        self.assertTrue(np.all(test_genotype_012[0] == genotype_012_dask[0]))
+        test_genotype_012 = test_genotype.to_n_alt(fill=-1)
+        self.assertTrue(np.all(test_genotype_012 == genotype_012_dask))
 
 if __name__ == '__main__':
     unittest.main()
