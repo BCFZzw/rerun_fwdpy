@@ -28,9 +28,9 @@ window_df = window_df[window_df.chr == "chr22"].sort_values(by = ["chr", "start"
 
 i = 0
 for pos_start, pos_end in zip(window_df.start.tolist(), window_df.end.tolist()):
-    #if i == 50:
-    #    break
     try:
+        ### maybe better to give it scikit allele callset..?
+        ### number of non-polymorphic sites is the number we want 
         genotype_012, pos_array = scikit_allele_parse_genotypes(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file)
     except KeyError:
         for arr in [D2_list, Dz_list, D_list, pi2_list, D2_subset_list, Dz_subset_list, D_subset_list, pi2_subset_list]:
@@ -41,14 +41,11 @@ for pos_start, pos_end in zip(window_df.start.tolist(), window_df.end.tolist()):
     D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(genotype_012, genotypes = True)
     pair_count_list.append(len(D2_pw))
     for arr, stats in zip([D2_list, Dz_list, D_list, pi2_list], [D2_pw, Dz_pw, D_pw, pi2_pw]):
-            arr.append(np.mean(stats))
+        arr.append(np.sum(stats))
     D2_pw_subset, Dz_pw_subset, pi2_pw_subset, D_pw_subset = moments.LD.Parsing.compute_pairwise_stats(genotype_012, pos_array, genotypes = True, distance_constrained = threshold)
     for arr, stats in zip([D2_subset_list, Dz_subset_list, D_subset_list, pi2_subset_list], [D2_pw_subset, Dz_pw_subset, D_pw_subset, pi2_pw_subset]):
         ### if all pairwise are filtered 
-        if (len(stats) == 0):
-            arr.append(np.nan)
-        else:
-            arr.append(np.mean(stats))
+        arr.append(np.sum(stats))
     pair_filtered_list.append(len(D2_pw_subset))
     i = i + 1
 
