@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 import moments.LD
-
+import allel
 
 class Test_simple_constrianed_genotype_count(unittest.TestCase):
     L = 5
@@ -14,6 +14,12 @@ class Test_simple_constrianed_genotype_count(unittest.TestCase):
     def test_catch_pos_array_dtype(self):
         with self.assertRaises(AssertionError):
             pos_array = np.array([1, 2, 3, 4, 5], dtype = np.int64)
+            threshold = 2
+            moments.LD.Parsing.compute_pairwise_stats(self.G, pos_array, genotypes = True, distance_constrained = threshold)
+
+    def test_catch_pos_array_len_diff(self):
+        with self.assertRaises(AssertionError):
+            pos_array = np.array([1, 2, 3, 4], dtype = np.int32)
             threshold = 2
             moments.LD.Parsing.compute_pairwise_stats(self.G, pos_array, genotypes = True, distance_constrained = threshold)
 
@@ -43,6 +49,34 @@ class Test_simple_constrianed_genotype_count(unittest.TestCase):
         self.assertTrue(np.all(Dz_pw == None))
         self.assertTrue(np.all(D_pw == None))
         self.assertTrue(np.all(pi2_pw == None))
+
+    def test_mean_pariwise_working(self):
+        ### Not working, needs more testing
+        pos_array = np.array([1, 2, 3, 4, 5], dtype = np.int32)
+        threshold = 10
+        #D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_average_stats(self.G, pos_array, genotypes = True, distance_constrained = threshold)
+        #print(D2_pw) # returns np.nan
+
+    def test_example(self):
+        pos_array = np.array([1, 2, 3], dtype = np.int32)
+        threshold = 5
+        G = np.random.randint(3, size=3 * 10).reshape(3, 10)
+        _, Dz_pw, _, _ = moments.LD.Parsing.compute_pairwise_stats(G, genotypes = True)
+        _, Dz_pw_filtered, _, _ = moments.LD.Parsing.compute_pairwise_stats(G, pos_array, genotypes = True, distance_constrained = threshold)
+        print(Dz_pw)
+        print(Dz_pw_filtered)
+        #self.assertTrue(np.all(Count_filtered == None))
+
+    def test_homogzygous_sites(self):
+        ### 2 homozygous sites, 2 individual, 1 pair
+        genotype = allel.GenotypeArray([[[0, 0], [0, 0]],
+        [[0, 0], [0, 0]]])
+        G = genotype.to_n_alt(fill = -1)
+        D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(G, genotypes = True)
+        ### return [np.nan], length is the number of pairs
+        self.assertTrue(np.all(np.isnan(D2_pw)))
+        
+
             
 if __name__ == '__main__':
     unittest.main()
