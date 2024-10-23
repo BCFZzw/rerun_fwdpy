@@ -68,13 +68,14 @@ class Test_simple_constrianed_genotype_count(unittest.TestCase):
         #self.assertTrue(np.all(Count_filtered == None))
 
     def test_homogzygous_sites(self):
-        ### 2 homozygous sites, 2 individual, 1 pair
-        genotype = allel.GenotypeArray([[[0, 0], [0, 0]],
-        [[0, 0], [0, 0]]])
+        ### 2 homozygous sites, 4 individual, 1 pair
+        ### moments LD (except D) does not work for fewer than 3 individuals
+        genotype = allel.GenotypeArray([[[0, 0], [0, 0], [0, 0], [0, 0]],
+        [[0, 0], [0, 0], [0, 0], [0, 0]]])
         G = genotype.to_n_alt(fill = -1)
         D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(G, genotypes = True)
-        ### return [np.nan], length is the number of pairs
-        self.assertTrue(np.all(np.isnan(D2_pw)))
+        ### return [0.], length is the number of pairs
+        self.assertTrue(np.all(D2_pw == 0))
         
 
             
