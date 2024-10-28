@@ -2,7 +2,6 @@ import pandas as pd
 import allel
 import zarr
 import numpy as np
-#import dask
 
 def _read_panel(panel_file):
     """
@@ -45,11 +44,12 @@ def locate_genotype_region(pos_array, pos_start: int, pos_end: int):
     if pos_end is None:
         pos_end = max(pos_array) + 1
     assert pos_end > pos_start
-    try:
+    ### no SNPs in region
+    if np.all((pos_array > pos_start) & (pos_array < pos_end) == False):
+        return slice(None, -0, None)
+    else:
         loc_region = pos_array.locate_range(pos_start, pos_end)
-    except KeyError:
-        raise KeyError("No variants in the given region!")
-    return loc_region
+        return loc_region
 
 
 def _read_zarr_callset(zarr_path):
@@ -79,6 +79,9 @@ def scikit_allele_parse_genotypes(zarr_path, pos_start = None, pos_end = None, p
         loc_samples = locate_panel_individuals(callset_samples, panel_file, pop, super_pop)
         genotype_dask = genotype_dask.take(loc_samples, axis = 1)
 
+    ### using .compute() to load from dask
+    # Count the number of alternative alleles for biallelic sites
+    # homogzygous reference is 0
     genotype_012 = genotype_dask.compute().to_n_alt(fill=-1)
     pos_array_np = np.array(pos_array) # required numpy by constrain function
     return genotype_012, pos_array_np

@@ -35,9 +35,14 @@ class Test_parse_vcf(unittest.TestCase):
         loc_samples = locate_panel_individuals(self.callset_samples, self.panel_file)
         self.assertTrue(len(loc_samples) == 2504)
 
-    def test_catch_no_snp_in_range(self):
-        with self.assertRaises(KeyError):
-            locate_genotype_region(self.pos_array, 0, 1)
+    def test_no_snp_in_range(self):
+        loc_region = locate_genotype_region(self.pos_array, 0, 1)
+        self.assertTrue(len(self.pos_array[loc_region]) == 0)
+
+    def test_no_snp_moment(self):
+        genotype_012_dask, pos_array = scikit_allele_parse_genotypes(self.zarr_path, pos_start = 0, pos_end = 1, panel_file = self.panel_file)
+        D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(genotype_012_dask, genotypes = True)
+        self.assertTrue(D2_pw.size == 0)
 
     def test_catch_reverse_order(self):
         with self.assertRaises(AssertionError):
