@@ -40,7 +40,7 @@ class Test_parse_vcf(unittest.TestCase):
         self.assertTrue(len(self.pos_array[loc_region]) == 0)
 
     def test_no_snp_moment(self):
-        genotype_012_dask, pos_array = scikit_allele_parse_genotypes(self.zarr_path, pos_start = 0, pos_end = 1, panel_file = self.panel_file)
+        genotype_012_dask, pos_array = get_genotype012(self.zarr_path, pos_start = 0, pos_end = 1, panel_file = self.panel_file)
         D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(genotype_012_dask, genotypes = True)
         self.assertTrue(D2_pw.size == 0)
 
@@ -69,7 +69,7 @@ class Test_parse_vcf(unittest.TestCase):
         self.assertTrue(len(range(loc_region.stop)[loc_region]) == 2)
 
     def test_genotype_parsing(self):
-        genotype_012_dask, pos_array = scikit_allele_parse_genotypes(self.zarr_path, pos_start = None, pos_end = 10666327, panel_file = self.panel_file)
+        genotype_012_dask, pos_array = get_genotype012(self.zarr_path, pos_start = None, pos_end = 10666327, panel_file = self.panel_file)
         self.assertTrue(len(pos_array) == 2)
         loc_samples = locate_panel_individuals(self.callset_samples, self.panel_file)
         test_genotype = allel.GenotypeArray(self.callset['calldata/GT'][:2])
@@ -78,12 +78,12 @@ class Test_parse_vcf(unittest.TestCase):
         self.assertTrue(np.all(test_genotype_012 == genotype_012_dask))
 
     def test_connecting_with_moments(self):
-        genotype_012, pos_array = scikit_allele_parse_genotypes(self.zarr_path, pos_start = None, pos_end = 10666327, panel_file = self.panel_file)
+        genotype_012, pos_array = get_genotype012(self.zarr_path, pos_start = None, pos_end = 10666327, panel_file = self.panel_file)
         D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(genotype_012, genotypes = True)
     
     def test_connecting_with_moments_constrained(self):
         threshold = 1
-        genotype_012, pos_array = scikit_allele_parse_genotypes(self.zarr_path, pos_start = None, pos_end = 10666327, panel_file = self.panel_file)
+        genotype_012, pos_array = get_genotype012(self.zarr_path, pos_start = None, pos_end = 10666327, panel_file = self.panel_file)
         D2_pw_subset, Dz_pw_subset, pi2_pw_subset, D_pw_subset = moments.LD.Parsing.compute_pairwise_stats(genotype_012, pos_array, genotypes = True, distance_constrained = threshold)
 
 if __name__ == '__main__':

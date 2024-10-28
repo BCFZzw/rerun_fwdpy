@@ -63,8 +63,7 @@ def _read_zarr_callset(zarr_path):
     callset_samples = callset["samples"]
     return callset, genotype_zarr, callset_pos, callset_samples
 
-
-def scikit_allele_parse_genotypes(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None):
+def select_sample_variants(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None):
     callset, genotype_zarr, callset_pos, callset_samples = _read_zarr_callset(zarr_path)
     pos_array = allel.SortedIndex(callset_pos)
     genotype_dask = allel.GenotypeDaskArray(genotype_zarr)
@@ -79,9 +78,23 @@ def scikit_allele_parse_genotypes(zarr_path, pos_start = None, pos_end = None, p
         loc_samples = locate_panel_individuals(callset_samples, panel_file, pop, super_pop)
         genotype_dask = genotype_dask.take(loc_samples, axis = 1)
 
+    return genotype_dask, pos_array
+
+
+def get_genotype012(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None):
+    genotype_dask, pos_array = select_sample_variants(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, pop = pop, super_pop = super_pop)
+
     ### using .compute() to load from dask
     # Count the number of alternative alleles for biallelic sites
     # homogzygous reference is 0
     genotype_012 = genotype_dask.compute().to_n_alt(fill=-1)
     pos_array_np = np.array(pos_array) # required numpy by constrain function
     return genotype_012, pos_array_np
+
+
+def get_genotype(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None):
+    genotype_dask, pos_array = select_sample_variants(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, pop = pop, super_pop = super_pop)
+
+    genotype = genotype_dask.compute()
+    pos_array_np = np.array(pos_array)
+    return genotype, pos_array_np
