@@ -28,11 +28,8 @@ window_df = window_df[window_df.chr == "chr22"].sort_values(by = ["chr", "start"
 
 i = 0
 for pos_start, pos_end in zip(window_df.start.tolist(), window_df.end.tolist()):
-    try:
-        ### maybe better to give it scikit allele callset..?
-        ### number of non-polymorphic sites is the number we want 
-        genotype_012, pos_array = scikit_allele_parse_genotypes(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file)
-    except KeyError:
+    genotype_012, pos_array = scikit_allele_parse_genotypes(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file)
+    if (len(pos_array) == 0):
         for arr in [D2_list, Dz_list, D_list, pi2_list, D2_subset_list, Dz_subset_list, D_subset_list, pi2_subset_list]:
             arr.append(np.nan)
         pair_count_list.append(0)
