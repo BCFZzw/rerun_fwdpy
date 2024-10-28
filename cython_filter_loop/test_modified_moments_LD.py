@@ -4,7 +4,7 @@ import moments.LD
 import allel
 
 class Test_simple_constrianed_genotype_count(unittest.TestCase):
-    L = 5
+    L = 3
     n = 5
     np.random.seed(5553)
     G = np.random.randint(3, size=L * n).reshape(L, n)

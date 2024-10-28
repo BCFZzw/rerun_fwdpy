@@ -36,5 +36,36 @@ class Test_simple_constrianed_genotype_count(unittest.TestCase):
         Count_filtered = Count[Bools]
         self.assertTrue(np.all(Count_filtered == None))
 
+    def test_example(self):
+        pos_array = np.array([1, 2, 3], dtype = np.int32)
+        G_dict = {0: {1: {0, 1}, 2: {2}},
+                1: {1: {0}, 2: {1, 2}},
+                2: {1: {1, 2}, 2: {0}}}
+        missing = False 
+        n = len(G_dict)
+        threshold = 0
+        Count = gsc_contrained.count_genotypes_sparse(G_dict, n, missing)
+        print(Count)
+        Bools = gsc_contrained.count_genotypes_distance_constrained(pos_array, threshold)
+        Count_filtered = Count[Bools]
+        print(Bools)
+        print(Count_filtered)
+        #self.assertTrue(np.all(Count_filtered == None))
+
+    def test_homogzygous_polymorphic_sites_mixed(self):
+        ### 2 homozygous sites, 2 individual, 1 pair
+        genotype = allel.GenotypeArray([[[0, 0], [0, 1]],
+        [[0, 0], [1, 1]],
+        [[1, 0], [0, 1]]])
+        G = genotype.to_n_alt(fill = -1)
+        G_dict, missing = moments.LD.Parsing._sparsify_genotype_matrix(G)
+        n = len(G_dict)
+        Counts = gsc_contrained.count_genotypes_sparse(G_dict, n, missing)
+        print(G)
+        D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(G, genotypes = True)
+        print(D2_pw)
+        ### return [np.nan], length is the number of pairs
+        #self.assertTrue(np.all(np.isnan(D2_pw)))
+
 if __name__ == '__main__':
     unittest.main()
