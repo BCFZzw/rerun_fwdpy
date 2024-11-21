@@ -9,8 +9,36 @@ def initialize_list(n, dtype) -> np.array:
     arr.fill( np.nan)
     return arr
 
+def jackknife_pop_region(zarr_path, pos_start, pos_end, threshold = 0, panel_file = None, super_pop = None):
+    subpopulations = parse_vcf.get_subpopulations(panel_file, super_pop)
+    n_pop = len(subpopulations)
+    D2_jackknife_list = initialize_list(n_pop + 1, float)
+    Dz_jackknife_list = initialize_list(n_pop + 1, float)
+    D_jackknife_list = initialize_list(n_pop + 1, float)
+    pi2_jackknife_list = initialize_list(n_pop + 1, float)
 
-def record_moments_LD(zarr_path, window_list, threshold = 0, panel_file = None, super_pop = None):
+    genotype_all, pos_array_all = parse_vcf.get_genotype(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, super_pop = super_pop)
+    assert len(pos_array_all) >= 2
+    genotype_all_012 = genotype_all.to_n_alt(fill = -1)
+    D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(genotype_all_012, genotypes = True, pos_array = pos_array_all, distance_constrained = threshold)
+
+    for arr, stats in zip([D2_jackknife_list, Dz_jackknife_list, D_jackknife_list, pi2_jackknife_list], [D2_pw, Dz_pw, D_pw, pi2_pw]):
+        arr[0] = np.sum(stats)
+
+    for i in range(0, n_pop):
+        pop = subpopulations[i]
+        genotype, pos_array = parse_vcf.get_genotype(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, pop = pop)
+        genotype_012 = genotype.to_n_alt(fill = -1)
+        D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(genotype_012, genotypes = True, pos_array = pos_array, distance_constrained = threshold)
+        for arr, stats in zip([D2_jackknife_list, Dz_jackknife_list, D_jackknife_list, pi2_jackknife_list], [D2_pw, Dz_pw, D_pw, pi2_pw]):
+            arr[i + 1] = np.sum(stats)
+        
+    LD_jackknife_dict = {"D2_pw": D2_jackknife_list, "Dz_pw": Dz_jackknife_list, "D_pw": D_jackknife_list, "pi2_pw": pi2_jackknife_list, "region": (pos_start, pos_end), "populations": np.append(super_pop, subpopulations) }
+
+    return LD_jackknife_dict
+
+
+def record_moments_LD(zarr_path, window_list, threshold = 0, panel_file = None, super_pop = None, pop = None):
     n_windows = len(window_list)
     assert n_windows >= 1 
     D2_list = initialize_list(n_windows, float)
@@ -29,7 +57,7 @@ def record_moments_LD(zarr_path, window_list, threshold = 0, panel_file = None, 
     for i in range(n_windows):
         pos_start = window_list[i][0]
         pos_end = window_list[i][1]
-        genotype_012, pos_array = parse_vcf.get_genotype012(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, super_pop = super_pop)
+        genotype_012, pos_array = parse_vcf.get_genotype012(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, super_pop = super_pop, pop = pop)
         if (len(pos_array) == 0):
             continue
         D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(genotype_012, genotypes = True)
