@@ -10,7 +10,7 @@ def initialize_list(n, dtype) -> np.array:
     return arr
 
 def jackknife_pop_region(zarr_path, pos_start, pos_end, threshold = 0, panel_file = None, super_pop = None):
-    subpopulations = parse_vcf.get_subpopulations(panel_file, super_pop)
+    subpopulations = parse_vcf.get_pops_from_superpop(panel_file, super_pop)
     n_pop = len(subpopulations)
     D2_jackknife_list = initialize_list(n_pop + 1, float)
     Dz_jackknife_list = initialize_list(n_pop + 1, float)
@@ -27,7 +27,7 @@ def jackknife_pop_region(zarr_path, pos_start, pos_end, threshold = 0, panel_fil
 
     for i in range(0, n_pop):
         pop = subpopulations[i]
-        genotype, pos_array = parse_vcf.get_genotype(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, pop = pop)
+        genotype, pos_array = parse_vcf.get_genotype(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, super_pop = "AFR", jackknife_pop = pop)
         genotype_012 = genotype.to_n_alt(fill = -1)
         D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(genotype_012, genotypes = True, pos_array = pos_array, distance_constrained = threshold)
         for arr, stats in zip([D2_jackknife_list, Dz_jackknife_list, D_jackknife_list, pi2_jackknife_list], [D2_pw, Dz_pw, D_pw, pi2_pw]):
