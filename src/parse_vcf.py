@@ -28,6 +28,10 @@ def locate_jackknife_individuals(callset_samples, panel_file, super_pop, jackkni
     """
     loc_super_pop_samples = locate_panel_individuals(callset_samples, panel_file, super_pop = super_pop)
     loc_pop_samples = locate_panel_individuals(callset_samples, panel_file, pop = jackknife_pop)
+    if len(np.intersect1d(loc_super_pop_samples, loc_pop_samples)) == 0:
+        raise ValueError("Jackknife population does not exist in the specified superpopulation.")
+    if len(np.intersect1d(loc_super_pop_samples, loc_pop_samples)) != len(loc_pop_samples):
+        raise ValueError("Jackknife population does not fully overalp the specified superpopulation.")
     loc_jackknife = np.setxor1d(loc_super_pop_samples, loc_pop_samples, assume_unique = False)
     assert len(loc_super_pop_samples) - len(loc_pop_samples) == len(loc_jackknife)
     return loc_jackknife
