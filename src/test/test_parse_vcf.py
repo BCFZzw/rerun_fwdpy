@@ -16,6 +16,11 @@ class Test_parse_vcf(unittest.TestCase):
     callset_samples = callset["samples"]
     panel_df = pd.read_csv(panel_file, sep = "\t")
 
+    def test_get_pops(self):
+        populations = get_pops_from_superpop(self.panel_file, super_pop = "AFR")
+        populations.sort()
+        self.assertTrue(np.all(populations == ['ACB', 'ASW', 'ESN', 'GWD', 'LWK', 'MSL', 'YRI']))
+
     def test_catch_pop_superpop_both_specified(self):
         with self.assertRaises(ValueError):
             locate_panel_individuals(self.callset_samples, self.panel_file, pop = "GBR", super_pop = "EUR")
@@ -30,6 +35,16 @@ class Test_parse_vcf(unittest.TestCase):
         self.assertTrue(len(loc_samples) == 661)
         for ind in self.callset["samples"][loc_samples]:
             self.assertTrue(self.panel_df[self.panel_df["sample"] == ind]["super_pop"].tolist()[0] == "AFR")
+
+    def test_jackknife_YRI(self):
+        loc_samples = locate_jackknife_individuals(self.callset_samples, self.panel_file, super_pop = "AFR", jackknife_pop = "YRI")
+        self.assertTrue(len(loc_samples) == sum((self.panel_df.super_pop == "AFR") & (self.panel_df["pop"] != "YRI"))) # 553
+        for ind in self.callset["samples"][loc_samples]:
+            self.assertTrue(self.panel_df[self.panel_df["sample"] == ind]["pop"].tolist()[0] != "YRI")
+
+    def test_catch_jackknife_not_exist(self):
+        with self.assertRaises(ValueError):
+            locate_jackknife_individuals(self.callset_samples, self.panel_file, super_pop = "AFR", jackknife_pop = "CHS")
 
     def test_all_panel(self):
         loc_samples = locate_panel_individuals(self.callset_samples, self.panel_file)
