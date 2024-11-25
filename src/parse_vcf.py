@@ -13,6 +13,20 @@ def _read_panel(panel_file):
     assert "super_pop" in panel_df.columns
     return panel_df
 
+def get_subpopulations(panel_file, super_pop):
+    panel_df = _read_panel(panel_file)
+    assert super_pop in panel_df["super_pop"].unique()
+    return panel_df[panel_df.super_pop == super_pop]["pop"].unique()
+
+def locate_jackknife_individuals(callset_samples, panel_file, super_pop, jackknife_pop):
+    loc_super_pop_samples = locate_panel_individuals(callset_samples, panel_file, super_pop = super_pop)
+    loc_pop_samples = locate_panel_individuals(callset_samples, panel_file, pop = jackknife_pop)
+    loc_jackknife = np.setxor1d(loc_super_pop_samples, loc_pop_samples, assume_unique = False)
+    assert len(loc_super_pop_samples) - len(loc_pop_samples) == len(loc_jackknife)
+    assert len(loc_jackknife) > 0
+    return loc_jackknife
+
+
 def locate_panel_individuals(callset_samples, panel_file, pop = None, super_pop = None):
     """
     Locate individuals specified in the panel files in the VCF callset data. Individuals belonging to a specific population or superpopulation can be sampled.
@@ -63,7 +77,7 @@ def _read_zarr_callset(zarr_path):
     callset_samples = callset["samples"]
     return callset, genotype_zarr, callset_pos, callset_samples
 
-def select_sample_variants(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None):
+def select_sample_variants(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None, jackknife_pop = None):
     callset, genotype_zarr, callset_pos, callset_samples = _read_zarr_callset(zarr_path)
     pos_array = allel.SortedIndex(callset_pos)
     genotype_dask = allel.GenotypeDaskArray(genotype_zarr)
@@ -75,14 +89,20 @@ def select_sample_variants(zarr_path, pos_start = None, pos_end = None, panel_fi
         genotype_dask = genotype_dask.take(loc_region, axis = 0)
 
     if panel_file is not None:
-        loc_samples = locate_panel_individuals(callset_samples, panel_file, pop, super_pop)
-        genotype_dask = genotype_dask.take(loc_samples, axis = 1)
+        if jackknife_pop is not None:
+            assert super_pop is not None
+            loc_jackknife = locate_jackknife_individuals(callset_samples, panel_file, super_pop = super_pop, jackknife_pop = jackknife_pop)
+            genotype_dask = genotype_dask.take(loc_jackknife, axis = 1)
+        else:
+            loc_samples = locate_panel_individuals(callset_samples, panel_file, pop, super_pop)
+            genotype_dask = genotype_dask.take(loc_samples, axis = 1)
 
     return genotype_dask, pos_array
 
 
-def get_genotype012(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None):
-    genotype_dask, pos_array = select_sample_variants(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, pop = pop, super_pop = super_pop)
+
+def get_genotype012(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None, jackknife_pop = None):
+    genotype_dask, pos_array = select_sample_variants(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, pop = pop, super_pop = super_pop, jackknife_pop = jackknife_pop)
 
     ### using .compute() to load from dask
     # Count the number of alternative alleles for biallelic sites
@@ -92,8 +112,8 @@ def get_genotype012(zarr_path, pos_start = None, pos_end = None, panel_file = No
     return genotype_012, pos_array_np
 
 
-def get_genotype(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None):
-    genotype_dask, pos_array = select_sample_variants(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, pop = pop, super_pop = super_pop)
+def get_genotype(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None, super_pop = None, jackknife_pop = None):
+    genotype_dask, pos_array = select_sample_variants(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, pop = pop, super_pop = super_pop, jackknife_pop = jackknife_pop)
 
     genotype = genotype_dask.compute()
     pos_array_np = np.array(pos_array)
