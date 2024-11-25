@@ -9,6 +9,18 @@ def initialize_list(n, dtype) -> np.array:
     arr.fill( np.nan)
     return arr
 
+
+def window_LD_stats(zarr_path, pos_start = None, pos_end = None, panel_file = None, pop = None,super_pop = None, jackknife_pop = None, distance_constrained = None):
+    genotype, pos_array = parse_vcf.get_genotype(zarr_path, pos_start = pos_start, pos_end = pos_end, panel_file = panel_file, pop = pop, super_pop = super_pop, jackknife_pop = jackknife_pop)
+    assert len(pos_array) >= 2
+    genotype_012 = genotype.to_n_alt(fill = -1)
+    D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(genotype_012, genotypes = True, pos_array = pos_array, distance_constrained = distance_constrained)
+    ac = genotype.count_alleles()
+    ### calculated out of the defined pos_start and pos_end window
+    pi = allel.sequence_diversity(pos_array, ac, start = pos_start, stop = pos_end)
+    return D2_pw, Dz_pw, D_pw, pi2_pw, pi
+
+
 def jackknife_pop_region(zarr_path, pos_start, pos_end, threshold = 0, panel_file = None, super_pop = None):
     subpopulations = parse_vcf.get_pops_from_superpop(panel_file, super_pop)
     n_pop = len(subpopulations)
