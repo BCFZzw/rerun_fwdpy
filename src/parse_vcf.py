@@ -83,7 +83,7 @@ def _read_zarr_callset(zarr_path):
     callset_samples = callset["samples"]
     return callset, genotype_zarr, callset_pos, callset_samples
 
-def select_variants(genotype_dask, pos_start, pos_end):
+def select_variants(genotype_dask, pos_array, pos_start, pos_end):
     """
     Subset genotype based on given positions.
     """
@@ -98,7 +98,6 @@ def select_sample(genotype_dask, callset_samples, panel_file, pop = None, super_
     Subset genotype based on a given population or superpopulation.
     """
     loc_samples = locate_panel_individuals(callset_samples, panel_file, pop, super_pop)
-    genotype_dask = genotype_dask.take(loc_samples, axis = 1)
     genotype_sample = genotype_dask.take(loc_samples, axis = 1)
     return genotype_sample
 
@@ -121,13 +120,13 @@ def select_sample_variants(zarr_path, pos_start = None, pos_end = None, panel_fi
     genotype_dask = allel.GenotypeDaskArray(genotype_zarr)
 
     if (pos_start is not None) or (pos_end is not None):
-        genotype_dask, pos_array = select_variants(genotype_dask, pos_start, pos_end)
+        genotype_dask, pos_array = select_variants(genotype_dask, pos_array, pos_start, pos_end)
 
     if panel_file is not None:
         if jackknife_pop is not None:
             assert super_pop is not None
             genotype_dask = select_sample_jackknife(genotype_dask, callset_samples, panel_file, super_pop, jackknife_pop)
-        elif (super_pop is not None) or (pop is not None):
+        else:
             genotype_dask = select_sample(genotype_dask, callset_samples, panel_file, pop = pop, super_pop = super_pop)
     elif (jackknife_pop is not None) or (super_pop is not None) or (pop is not None):
         raise ValueError("Panel file is not given when selecting individuals.")
