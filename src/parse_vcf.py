@@ -110,7 +110,7 @@ def select_sample_jackknife(genotype_dask, callset_samples, panel_file, super_po
     For Jackknife, subsect genotype based on leave-one-out populations from a superpopulation.
     """
     loc_jackknife = locate_jackknife_individuals(callset_samples, panel_file, super_pop = super_pop, jackknife_pop = jackknife_pop)
-    genotype_jackknife = genotype_dask.take(loc_samples, axis = 1)
+    genotype_jackknife = genotype_dask.take(loc_jackknife, axis = 1)
     return genotype_jackknife
 
 
