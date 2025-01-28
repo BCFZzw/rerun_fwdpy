@@ -1,0 +1,9 @@
+\contentsline {section}{\numberline {1}Introduction}{3}{section.1}%
+\contentsline {section}{\numberline {2}Methods}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Hard selective sweep simulations}{3}{subsection.2.1}%
+\contentsline {subsubsection}{\numberline {2.1.1}Selective sweep at fixation}{3}{subsubsection.2.1.1}%
+\contentsline {subsubsection}{\numberline {2.1.2}Selective sweep post fixation}{4}{subsubsection.2.1.2}%
+\contentsline {section}{\numberline {3}Results}{4}{section.3}%
+\contentsline {section}{\numberline {4}Discussion}{4}{section.4}%
+\contentsline {section}{\numberline {5}Conclusion}{5}{section.5}%
+\contentsline {section}{\numberline {6}References}{5}{section.6}%
