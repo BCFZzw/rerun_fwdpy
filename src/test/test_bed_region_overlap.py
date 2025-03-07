@@ -32,7 +32,17 @@ class Test_parse_vcf(unittest.TestCase):
             "start" : [10], "end": [200]
         }))
 
+    def test_intersect_windows_get_overlap(self):
+        ratio_df = intersect_windows_get_overlap(self.bed1, self.bed2)
+        assert np.all(ratio_df == pd.DataFrame({"chr" : ["chr1"],
+            "window_start" : [10], "window_end": [100],
+            "overlap" : [20], 
+            "window_size" : [90], "overlap_ratio": [20/90.]
+        }))
 
+    def test_check_overlapping_features(self):
+        assert check_overlapping_features(self.bed1) == True
+        assert check_overlapping_features(self.bed2) == False
         
 
 

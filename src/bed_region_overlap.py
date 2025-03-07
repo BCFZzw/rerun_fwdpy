@@ -41,15 +41,21 @@ def intersect_windows_get_overlap(LD_bed, bed) -> pd.DataFrame:
     ratio_df["overlap_ratio"] = ratio_df["overlap"]/ratio_df["window_size"]
     return ratio_df
 
-def check_overlapping_features(bed):
+def check_overlapping_features(bed) -> bool:
     """
     Check if all bed file features are non-overlapping.
     Bed regions are left-open and right-closed.
+    Features are checked per chromosomes.
     """
     df = read_bedfile(bed)
-    intervals = [pd.Interval(*regions, closed = "right") for regions in zip(df["start"], df["end"])]
-    interval_arr =  pd.arrays.IntervalArray(intervals)
-    return interval_arr.is_overlapping
+    for chrom in df["chrom"].unique():
+        chr_region_start = df[df["chrom"] == chrom]["start"].to_list()
+        chr_region_end = df[df["chrom"] == chrom]["end"].to_list()
+        intervals = [pd.Interval(*regions, closed = "right") for regions in zip(chr_region_start, chr_region_end)]
+        interval_arr =  pd.arrays.IntervalArray(intervals)
+        if not interval_arr.is_non_overlapping_monotonic:
+            return True
+    return False
 
 
 def instersect_Nea_tracks(df, bedfile):
