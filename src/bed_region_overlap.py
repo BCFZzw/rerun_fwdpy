@@ -29,14 +29,22 @@ def intersect_2_bed(bed1, bed2, **kwargs) -> pd.DataFrame:
     intersect_df = intersect.to_dataframe()
     return intersect_df
 
-def intersect_windows(LD_bed, bed) -> pd.DataFrame:
+def intersect_windows_get_overlap(LD_bed, bed) -> pd.DataFrame:
+    """
+    -wo is used in bedtools intersect to get the ratio of overlap.
+    """
     intersect_df = intersect_2_bed(LD_bed, bed, wo = True)
-    
+    intersect_df.columns = ["chr", " window_start", "window_end", "bed_chr", "bed_start", "bed_end", "overlap"]
+    intersect_df = intersect_df.groupby(["chr", "window_start", "window_end"])["overlap"].sum().reset_index()
+    intersect_df["window_size"] = intersect_df["window_end"] - intersect_df["window_start"]
+    intersect_df["overlap_ratio"] = intersect_df["overlap"]/intersect_df["window_size"]
+    return intersect_df
+
 
 
 def instersect_Nea_tracks(df, bedfile):
     LD_window = convert_dataframe_to_bed(df)
-    intersect_Nea = intersect_2_bed(LD_window, bedfile, wo = True).to_dataframe()
+    intersect_Nea = intersect_2_bed(LD_window, bedfile, wo = True)
     ### sum all overlapped bases
     intersect_Nea.columns = ["chr", "window_start", "window_end", "bed_chr", "bed_start", "bed_end", "freq", "overlap"]
     intersect_window = intersect_Nea.groupby(["chr", "window_start", "window_end"]).agg({ "overlap": "sum", "freq": "max"}).reset_index()
@@ -44,4 +52,7 @@ def instersect_Nea_tracks(df, bedfile):
     intersect_window["overlap_ratio"] = intersect_window["overlap"]/intersect_window.window_size
     return intersect_window
 
-#def window_overlap_corelation()
+#def window_overlap_correlation()
+
+
+# def differential_plot
