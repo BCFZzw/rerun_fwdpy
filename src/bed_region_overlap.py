@@ -29,19 +29,50 @@ def intersect_2_bed(bed1, bed2, **kwargs) -> pd.DataFrame:
     intersect_df = intersect.to_dataframe()
     return intersect_df
 
-def intersect_windows_get_overlap(LD_bed, bed) -> pd.DataFrame:
+
+def intersect_windows(df, bed, **kwargs) -> pd.DataFrame:
+    """
+    Assume non-overlapped features in the bed file.
+    Using kwargs to specify which bed operations to use.
+    """
+    if check_overlapping_features(bed):
+        raise ValueError("Bed file contains overlapping features.")
+    df_bed = convert_dataframe_to_bed(df)
+    intersect_df = intersect_2_bed(df_bed, bed, **kwargs)
+    return intersect_df
+
+def group_intersect_results(intersect_df, group_ops: dict):
+    """
+    Using group_ops to specify the dict in pd.DataFrame.agg() functions. Grouping will be done using the first three columns, which is the ["chrom", "start", "end"] in the default pybedtools intersect output . Grouping Dict should be of form {column_index : function operation}
+    """
+    group_df = intersect_df.groupby(["chrom", "start", "end"])["overlap"].sum().reset_index()
+    return group_df
+
+    
+
+def intersect_windows_get_overlap(df, bed) -> pd.DataFrame:
     """
     -wo is used in bedtools intersect to get the ratio of overlap.
     Assumes non-overlapped bed track features.
     """
-    if check_overlapping_features(bed):
-        raise ValueError("Bed file contains overlapping features.")
-    intersect_df = intersect_2_bed(LD_bed, bed, wo = True)
+    intersect_df = intersect_windows(df, bed, wo = True)
     intersect_df.columns = ["chr", "window_start", "window_end", "bed_chr", "bed_start", "bed_end", "overlap"]
     ratio_df = intersect_df.groupby(["chr", "window_start", "window_end"])["overlap"].sum().reset_index()
     ratio_df["window_size"] = ratio_df["window_end"] - ratio_df["window_start"]
     ratio_df["overlap_ratio"] = ratio_df["overlap"]/ratio_df["window_size"]
     return ratio_df
+
+def intersect_windows_get_overlap_freq(df, bedfile):
+    """
+    -wo is used in bedtools intersect to get the ratio of overlap.
+    Assumes non-overlapped bed track features.
+    """
+    intersect_df = intersect_windows(df, bed, wo = True)
+    intersect_df.columns = ["chr", "window_start", "window_end", "bed_chr", "bed_start", "bed_end", "overlap", "freq"]
+    freq_df = intersect_df.groupby(["chr", "window_start", "window_end"]).agg({ "overlap": "sum", "freq": "max"}).reset_index()
+    freq_df["window_size"] = freq_df["window_end"] - freq_df["window_start"]
+    freq_df["overlap_ratio"] = freq_df["overlap"]/freq_df["window_size"]
+    return freq_df
 
 def check_overlapping_features(bed) -> bool:
     """
@@ -69,6 +100,9 @@ def instersect_Nea_tracks(df, bedfile):
     intersect_window["window_size"] = intersect_window.window_end - intersect_window.window_start
     intersect_window["overlap_ratio"] = intersect_window["overlap"]/intersect_window.window_size
     return intersect_window
+
+
+
 
 #def window_overlap_correlation()
 
