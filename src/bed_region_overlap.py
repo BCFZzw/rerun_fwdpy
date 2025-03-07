@@ -32,13 +32,14 @@ def intersect_2_bed(bed1, bed2, **kwargs) -> pd.DataFrame:
 def intersect_windows_get_overlap(LD_bed, bed) -> pd.DataFrame:
     """
     -wo is used in bedtools intersect to get the ratio of overlap.
+    Assumes non-overlapped bed track features.
     """
     intersect_df = intersect_2_bed(LD_bed, bed, wo = True)
-    intersect_df.columns = ["chr", " window_start", "window_end", "bed_chr", "bed_start", "bed_end", "overlap"]
-    intersect_df = intersect_df.groupby(["chr", "window_start", "window_end"])["overlap"].sum().reset_index()
-    intersect_df["window_size"] = intersect_df["window_end"] - intersect_df["window_start"]
-    intersect_df["overlap_ratio"] = intersect_df["overlap"]/intersect_df["window_size"]
-    return intersect_df
+    intersect_df.columns = ["chr", "window_start", "window_end", "bed_chr", "bed_start", "bed_end", "overlap"]
+    ratio_df = intersect_df.groupby(["chr", "window_start", "window_end"])["overlap"].sum().reset_index()
+    ratio_df["window_size"] = ratio_df["window_end"] - ratio_df["window_start"]
+    ratio_df["overlap_ratio"] = ratio_df["overlap"]/ratio_df["window_size"]
+    return ratio_df
 
 
 
