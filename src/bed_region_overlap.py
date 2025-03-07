@@ -41,6 +41,15 @@ def intersect_windows_get_overlap(LD_bed, bed) -> pd.DataFrame:
     ratio_df["overlap_ratio"] = ratio_df["overlap"]/ratio_df["window_size"]
     return ratio_df
 
+def check_overlapping_features(bed):
+    """
+    Check if all bed file features are non-overlapping.
+    Bed regions are left-open and right-closed.
+    """
+    df = read_bedfile(bed)
+    intervals = [pd.Interval(*regions, closed = "right") for regions in zip(df["start"], df["end"])]
+    interval_arr =  pd.arrays.IntervalArray(intervals)
+    return interval_arr.is_overlapping
 
 
 def instersect_Nea_tracks(df, bedfile):
