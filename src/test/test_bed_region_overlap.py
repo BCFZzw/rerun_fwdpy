@@ -9,6 +9,7 @@ import pandas as pd
 class Test_parse_vcf(unittest.TestCase):
 
     bed1 = "test1.bed"
+    bed1_non_overlap = "test1_non_overlap.bed"
     bed2 = "test2.bed"
     pybedtools.helpers.set_bedtools_path(path='/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/bedtools/2.31.0/bin/')
 
@@ -28,12 +29,12 @@ class Test_parse_vcf(unittest.TestCase):
         bed1 = pybedtools.BedTool(self.bed1)
         bed2 = pybedtools.BedTool(self.bed2)
         df = intersect_2_bed(bed1, bed2, v = True)
-        assert np.all(df == pd.DataFrame({"chrom" : ["chr2"],
-            "start" : [10], "end": [200]
+        assert np.all(df == pd.DataFrame({"chrom" : ["chr2", "chr3", "chr3"],
+            "start" : [10, 10, 10], "end": [200, 20, 100]
         }))
 
     def test_intersect_windows_get_overlap(self):
-        ratio_df = intersect_windows_get_overlap(self.bed1, self.bed2)
+        ratio_df = intersect_windows_get_overlap(self.bed1_non_overlap, self.bed2)
         assert np.all(ratio_df == pd.DataFrame({"chr" : ["chr1"],
             "window_start" : [10], "window_end": [100],
             "overlap" : [20], 
@@ -43,6 +44,10 @@ class Test_parse_vcf(unittest.TestCase):
     def test_check_overlapping_features(self):
         assert check_overlapping_features(self.bed1) == True
         assert check_overlapping_features(self.bed2) == False
+
+    def test_intersect_windows_get_overlap_assertion(self):
+        with self.assertRaises(ValueError):
+            ratio_df = intersect_windows_get_overlap(self.bed2, self.bed1)
         
 
 
