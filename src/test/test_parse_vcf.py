@@ -13,7 +13,7 @@ class Test_parse_vcf(unittest.TestCase):
     zarr_path = "/home/alouette/projects/ctb-sgravel/data/30x1000G_biallelic_strict_masked/zarrFormat/chr22"
     callset = zarr.open_group(zarr_path, mode='r')
     pos_array = allel.SortedIndex(callset['variants/POS'])
-    callset_samples = callset["samples"]
+    callset_samples = callset["samples"] # to view, use [:], the code for individual is returned
     panel_df = pd.read_csv(panel_file, sep = "\t")
 
     def test_get_pops(self):
@@ -33,12 +33,17 @@ class Test_parse_vcf(unittest.TestCase):
         loc_samples = locate_panel_individuals(self.callset_samples, self.panel_file, super_pop = "AFR")
         self.assertTrue(len(loc_samples) == sum(self.panel_df.super_pop == "AFR"))
         self.assertTrue(len(loc_samples) == 661)
+        samples = self.panel_df[self.panel_df["sample"].isin(self.callset["samples"][loc_samples])]
+        self.assertTrue(samples["super_pop"].unique() == ['AFR'])
         for ind in self.callset["samples"][loc_samples]:
             self.assertTrue(self.panel_df[self.panel_df["sample"] == ind]["super_pop"].tolist()[0] == "AFR")
 
     def test_jackknife_YRI(self):
         loc_samples = locate_jackknife_individuals(self.callset_samples, self.panel_file, super_pop = "AFR", jackknife_pop = "YRI")
         self.assertTrue(len(loc_samples) == sum((self.panel_df.super_pop == "AFR") & (self.panel_df["pop"] != "YRI"))) # 553
+        samples = self.panel_df[self.panel_df["sample"].isin(self.callset["samples"][loc_samples])]
+        self.assertTrue(np.all(np.sort(samples["pop"].unique()) == ['ACB', 'ASW', 'ESN', 'GWD', 'LWK', 'MSL']))
+        self.assertTrue(np.all(samples["super_pop"].unique() == ['AFR']))
         for ind in self.callset["samples"][loc_samples]:
             self.assertTrue(self.panel_df[self.panel_df["sample"] == ind]["pop"].tolist()[0] != "YRI")
 
@@ -52,11 +57,35 @@ class Test_parse_vcf(unittest.TestCase):
 
     def test_no_snp_in_range(self):
         loc_region = locate_genotype_region(self.pos_array, 0, 1)
-        self.assertTrue(len(self.pos_array[loc_region]) == 0)
+        self.assertTrue(loc_region == slice(None, 0, None))
+
+    def test_no_snp_in_range_exclusive(self):
+        """
+        From the window side, it needs to be non-overlapping, exlusive on the right hand side
+        """
+        pos_arr = allel.SortedIndex([10])
+        loc_region = locate_genotype_region(pos_arr, pos_end = 10)
+        self.assertTrue(loc_region == slice(None, 0, None))
+        pos_arr = allel.SortedIndex([10, 11])
+        loc_region = locate_genotype_region(pos_arr, pos_end = 11)
+        self.assertTrue(loc_region == slice(0, 2, None))
+        self.assertTrue(np.all(pos_arr[loc_region] == pos_arr))
+        pos_arr = allel.SortedIndex([1, 10])
+        loc_region = locate_genotype_region(pos_arr, 1, 10)
+        self.assertTrue(loc_region == slice(None, 0, None))
+    
+
+    def test_take_all_snps(self):
+        loc_region = locate_genotype_region(self.pos_array)
+        self.assertTrue(np.all(self.pos_array == self.pos_array[loc_region]))
 
     def test_no_snp_moment(self):
         genotype_012_dask, pos_array = get_genotype012(self.zarr_path, pos_start = 0, pos_end = 1, panel_file = self.panel_file)
+        self.assertTrue(not genotype_012_dask.any())
+        self.assertTrue(np.all(pos_array == []))
+        ### this will return [] for all 
         D2_pw, Dz_pw, pi2_pw, D_pw = moments.LD.Parsing.compute_pairwise_stats(genotype_012_dask, genotypes = True)
+        self.assertTrue(np.all(D2_pw == []))
         self.assertTrue(D2_pw.size == 0)
 
     def test_catch_reverse_order(self):
@@ -87,6 +116,15 @@ class Test_parse_vcf(unittest.TestCase):
         genotype_012_dask, pos_array = get_genotype012(self.zarr_path, pos_start = None, pos_end = 10666327, panel_file = self.panel_file)
         self.assertTrue(len(pos_array) == 2)
         loc_samples = locate_panel_individuals(self.callset_samples, self.panel_file)
+        test_genotype = allel.GenotypeArray(self.callset['calldata/GT'][:2])
+        test_genotype = test_genotype.take(loc_samples, axis = 1)
+        test_genotype_012 = test_genotype.to_n_alt(fill=-1)
+        self.assertTrue(np.all(test_genotype_012 == genotype_012_dask))
+
+    def test_genotype_parsing_jackknife(self):
+        genotype_012_dask, pos_array = get_genotype012(self.zarr_path, pos_start = None, pos_end = 10666327, panel_file = self.panel_file, super_pop = "AFR", jackknife_pop = "YRI")
+        self.assertTrue(len(pos_array) == 2)
+        loc_samples = locate_jackknife_individuals(self.callset_samples, self.panel_file, super_pop = "AFR", jackknife_pop = "YRI")
         test_genotype = allel.GenotypeArray(self.callset['calldata/GT'][:2])
         test_genotype = test_genotype.take(loc_samples, axis = 1)
         test_genotype_012 = test_genotype.to_n_alt(fill=-1)
