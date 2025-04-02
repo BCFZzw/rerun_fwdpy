@@ -59,7 +59,7 @@ def locate_panel_individuals(callset_samples, panel_file, pop = None, super_pop 
     loc_samples = panel_df.callset_index.values
     return loc_samples
 
-def locate_genotype_region(pos_array, pos_start: int, pos_end: int):
+def locate_genotype_region(pos_array, pos_start = None, pos_end = None):
     """
     Locate the indices of a region in the genotype position array.
     """
@@ -69,8 +69,9 @@ def locate_genotype_region(pos_array, pos_start: int, pos_end: int):
         pos_end = max(pos_array) + 1
     assert pos_end > pos_start
     ### no SNPs in region
+    ### exclusive at both sides at the moment, might need to make 1 inclusive
     if np.all((pos_array > pos_start) & (pos_array < pos_end) == False):
-        return slice(None, -0, None)
+        return slice(None, 0, None)
     else:
         loc_region = pos_array.locate_range(pos_start, pos_end)
         return loc_region
