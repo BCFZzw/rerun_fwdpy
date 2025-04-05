@@ -27,6 +27,8 @@ def get_bp_from_cum_cM(cM_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
     ### np.interp(query, given_x, given_f(x))
     pos_array = np.interp(M_array, ms_RateMap.get_cumulative_mass(ms_RateMap.right), ms_RateMap.right)
     pos_array = pos_array.astype(int)
+    ### always add the first 0 backin the pos array
+    pos_array = np.insert(pos_array, 0 , 0)
     return pos_array
 
 
@@ -42,7 +44,7 @@ def window_by_recombination(rec_map_path: str, rec_step = 0.04, pos_start = None
     Return a dataframe of non-overlapping windows of fixed recombination rate calculated from the provided rate map. Units are in centi-Morgan.
     The user can specify a position start and end to calculate the windows.
     The first window will be equal to the rate map start or position start, whichever is larger.
-    The last window will be last full-length window of rec_step size before the rate map end or position end.
+    The last window will be last full-length window of rec_step size, equal or smaller than rate map end or position end.
     """
     ms_RateMap = msprime_read_HapMap(rec_map_path)
     if (pos_start is None):
@@ -50,13 +52,23 @@ def window_by_recombination(rec_map_path: str, rec_step = 0.04, pos_start = None
     if (pos_end is None):
         pos_end = ms_RateMap.sequence_length
     if pos_end < pos_start:
-        raise ValueError(f"Input positions are invalid")
+        raise ValueError("Input positions are invalid.")
+    if pos_end > ms_RateMap.sequence_length:
+        raise ValueError("Position beyond rate map end.")
     trim_RateMap = ms_RateMap.slice(pos_start, pos_end, trim = True)
     ### generate fixed rec rate windows
     cM_list = np.arange(0, trim_RateMap.total_mass * 100, rec_step)
+    ### assert if step size is too large
+    if len(cM_list) <= 1:
+        raise ValueError("The window rec step size is too large. No full-size windows are generated.")
     ### get bp positions
     bin_list = get_bp_from_cum_cM(cM_list, trim_RateMap)
-    window_df = pd.DataFrame({"window_start": bin_list[:-1], "window_end": bin_list[1:], "start_cM": cM_list[:-1]})
+    ### add the pos_start back in from trimming
+    bin_list = bin_list + pos_start
+    if len(cM_list) == 2:
+        window_df = pd.DataFrame({"window_start": bin_list[0], "window_end": bin_list[1], "start_cM": cM_list[0]}, index = [0])
+    else:
+        window_df = pd.DataFrame({"window_start": bin_list[:-1], "window_end": bin_list[1:], "start_cM": cM_list})
     return window_df
     
 
