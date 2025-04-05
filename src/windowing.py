@@ -4,14 +4,17 @@ import numpy as np
 import allel
 
 
-def _msprime_read_HapMap(rec_map_path: str) -> pd.DataFrame:
+def msprime_read_HapMap(path: str, pos_col = 1, rate_col = 2) -> ms.RateMap:
     """
     Require msprime >= 1.0.0
     Read the recombination map using msprime functionality.
     Can uses the functionality: get_cumulative_mass(), find_index()
     Column 1-2, positions; left: inclusive, right: exclusive
+    The HapMap format input must be a file with a header and at least 2 columns, delimited by white space.
+    The 2 columns must be Position(bp), and Rate(cM/Mb). Default for them to take the second and third columns. 
+    The return will be a msprime RateMap object, with position in bp, and rate in M/bp.
     """
-    ms_RateMap = ms.RateMap.read_hapmap(rec_map_path, position_col=1, rate_col=2)
+    ms_RateMap = ms.RateMap.read_hapmap(path, position_col= pos_col , rate_col = rate_col)
     return ms_RateMap
 
 
@@ -36,6 +39,7 @@ def _get_cum_cM_from_bp(pos_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
 
 def _scikit_allel_windowing(snp_array: list, snp_pos: list, window_pos_list:list) -> list:
     """
+    Deprecated
     Master window function, based on the input bp, give back the subset windows in a list
     This function is the core function and used for other detailed window_by_* functions.
     :param snp_array: The SNP array read by scikit-allel format.
