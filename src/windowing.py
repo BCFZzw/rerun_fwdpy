@@ -1,7 +1,6 @@
 import pandas as pd 
 import msprime as ms
 import numpy as np
-import allel
 
 
 def msprime_read_HapMap(path: str, pos_col = 1, rate_col = 2) -> ms.RateMap:
@@ -18,7 +17,7 @@ def msprime_read_HapMap(path: str, pos_col = 1, rate_col = 2) -> ms.RateMap:
     return ms_RateMap
 
 
-def _get_bp_from_cum_cM(cM_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
+def get_bp_from_cum_cM(cM_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
     """
     Following msprime RateMap get_cumulative_mass functionality for the bp to cumulative cM convertion.
     """
@@ -31,33 +30,16 @@ def _get_bp_from_cum_cM(cM_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
     return pos_array
 
 
-def _get_cum_cM_from_bp(pos_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
+def get_cum_cM_from_bp(pos_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
     """
     Using msprime RateMap functionality
     """
     return ms_RateMap.get_cumulative_mass(pos_list)*100
 
 
-def _scikit_allel_windowing(snp_array: list, snp_pos: list, window_pos_list:list) -> list:
-    """
-    Deprecated
-    Master window function, based on the input bp, give back the subset windows in a list
-    This function is the core function and used for other detailed window_by_* functions.
-    :param snp_array: The SNP array read by scikit-allel format.
-    :param window_index_array: The list of tuple (start, end) index of each windows of the SNP array.
-    Return a list of slices
-    """
-    index_snp_pos = allel.SortedIndex(snp_pos)
-    if np.any(window_pos_list) < 0 or np.max(window_pos_list) > np.max(pos_array) or np.min(window_pos_list) > np.min(pos_array):
-        raise KeyError(f"Window positions out of bounds")
-    if not np.all(np.diff(window_pos_list) > 0):
-        raise KeyError(f"Window positions are not in asending order")
-    window_list = [index_snp_pos.locate_range(start, end) for start, end in zip(window_pos_list[:-1], window_pos_list[1:]) ]
-    ### next step requires loading the data, do it when in need
-    return window_list
 
 
-def window_by_reombination(snp_array: list, pos_array: list, rec_map: ms.RateMap, rec_start: float, rec_end: float, rec_step = 0.04) -> list:
+def window_by_reombination(snp_array: list, pos_array: list, rec_map: ms.RateMap, rec_start: float, rec_end: float, rec_step = 0.04) -> pd.DataFrame:
     """
     Require msprime >= 1.0.0 to use RateMap
     Call this function to get the window list separated by rec_distance
@@ -82,4 +64,11 @@ def window_by_reombination(snp_array: list, pos_array: list, rec_map: ms.RateMap
     window_list = _scikit_allel_windowing(snp_array, pos_array, bp_array)
     return window_list
     
-    
+
+def window_to_bed(savePath: str, window_df: pd.DataFrame, chromosome = "."):
+    """
+    Save the windows to a bed file with header and 4 columns: chr, window_start, window_end, cum_rec_rate_at_start(cM)
+    """
+    df = window_df.copy()
+    df.insert(loc=0, column='chr', value= chromosome)
+    df.to_csv(savePath, sep = "\t", index = False, header = ["chr", "window_start", "window_end", "cum_rec_rate_at_start(cM)"])
