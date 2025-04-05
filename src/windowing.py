@@ -27,8 +27,6 @@ def get_bp_from_cum_cM(cM_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
     ### np.interp(query, given_x, given_f(x))
     pos_array = np.interp(M_array, ms_RateMap.get_cumulative_mass(ms_RateMap.right), ms_RateMap.right)
     pos_array = pos_array.astype(int)
-    ### always add the first 0 back in the pos array
-    pos_array = np.insert(pos_array, 0 , 0)
     return pos_array
 
 
@@ -55,7 +53,9 @@ def window_by_recombination(rec_map_path: str, rec_step = 0.04, pos_start = None
         raise ValueError("Input positions are invalid.")
     if pos_end > ms_RateMap.sequence_length:
         raise ValueError("Position beyond rate map end.")
-    trim_RateMap = ms_RateMap.slice(pos_start, pos_end, trim = True)
+    ### in RateMap.slice(), right side is exclusive, plus 1 to include
+    ### except when it is already the entire length
+    trim_RateMap = ms_RateMap.slice(pos_start, min(pos_end + 1, ms_RateMap.sequence_length), trim = False)
     ### generate fixed rec rate windows
     cM_list = np.arange(0, trim_RateMap.total_mass * 100, rec_step)
     ### assert if step size is too large
@@ -63,13 +63,11 @@ def window_by_recombination(rec_map_path: str, rec_step = 0.04, pos_start = None
         raise ValueError("No windows will be generated. Step size can be too large")
     ### get bp positions
     bin_list = get_bp_from_cum_cM(cM_list, trim_RateMap)
-    ### add the position back from trimming operation
-    bin_list = bin_list + pos_start
     ### If only one window is generated (with the initial 0)
     if len(cM_list) == 2:
-        window_df = pd.DataFrame({"window_start": bin_list[0], "window_end": bin_list[1], "start_cM": cM_list[0]}, index = [0])
+        window_df = pd.DataFrame({"window_start": bin_list[0], "window_end": bin_list[1], "cum_cM": cM_list[1]}, index = [0])
     else:
-        window_df = pd.DataFrame({"window_start": bin_list[:-1], "window_end": bin_list[1:], "start_cM": cM_list})
+        window_df = pd.DataFrame({"window_start": bin_list[:-1], "window_end": bin_list[1:], "cum_cM": cM_list[1:]})
     return window_df
     
 

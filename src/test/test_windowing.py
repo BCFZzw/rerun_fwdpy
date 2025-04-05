@@ -42,6 +42,11 @@ class Test_windowing(unittest.TestCase):
         self.assertTrue(np.shape(test)[0] == 1)
 
         
+    def test_region_window(self):
+        pos_start = 68965
+        pos_end = 308604
+        ### the last window will not be included 
+        test = windowing.window_by_recombination(self.rate_map_chr1, pos_start = None, pos_end = None)
 
 
 
