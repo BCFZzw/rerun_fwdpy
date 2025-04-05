@@ -62,6 +62,7 @@ def locate_panel_individuals(callset_samples, panel_file, pop = None, super_pop 
 def locate_genotype_region(pos_array, pos_start = None, pos_end = None):
     """
     Locate the indices of a region in the genotype position array.
+    Improvement can be added when there are SNPs on the edge of the windows.
     """
     if pos_start is None:
         pos_start = 1
@@ -69,7 +70,8 @@ def locate_genotype_region(pos_array, pos_start = None, pos_end = None):
         pos_end = max(pos_array) + 1
     assert pos_end > pos_start
     ### no SNPs in region
-    ### exclusive at both sides at the moment, might need to make 1 inclusive
+    ### exclusive at both sides at the moment, better to make 1 inclusive
+    ### make sure there is no double counting of the SNPs per windows
     if np.all((pos_array > pos_start) & (pos_array < pos_end) == False):
         return slice(None, 0, None)
     else:

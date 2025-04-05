@@ -27,7 +27,7 @@ def get_bp_from_cum_cM(cM_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
     ### np.interp(query, given_x, given_f(x))
     pos_array = np.interp(M_array, ms_RateMap.get_cumulative_mass(ms_RateMap.right), ms_RateMap.right)
     pos_array = pos_array.astype(int)
-    ### always add the first 0 backin the pos array
+    ### always add the first 0 back in the pos array
     pos_array = np.insert(pos_array, 0 , 0)
     return pos_array
 
@@ -60,11 +60,12 @@ def window_by_recombination(rec_map_path: str, rec_step = 0.04, pos_start = None
     cM_list = np.arange(0, trim_RateMap.total_mass * 100, rec_step)
     ### assert if step size is too large
     if len(cM_list) <= 1:
-        raise ValueError("The window rec step size is too large. No full-size windows are generated.")
+        raise ValueError("No windows will be generated. Step size can be too large")
     ### get bp positions
     bin_list = get_bp_from_cum_cM(cM_list, trim_RateMap)
-    ### add the pos_start back in from trimming
+    ### add the position back from trimming operation
     bin_list = bin_list + pos_start
+    ### If only one window is generated (with the initial 0)
     if len(cM_list) == 2:
         window_df = pd.DataFrame({"window_start": bin_list[0], "window_end": bin_list[1], "start_cM": cM_list[0]}, index = [0])
     else:
