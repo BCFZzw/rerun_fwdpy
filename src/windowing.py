@@ -25,7 +25,8 @@ def _get_bp_from_cum_cM(cM_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
     M_array = np.array(cM_list)/100 ### convert to Morgan
     if np.any(M_array < 0) or np.any(M_array > ms_RateMap.total_mass):
         raise ValueError(f"Cannot have cumulative cM < 0 or > {ms_RateMap.total_mass * 100}")
-    pos_array = np.interp(M_array, np.nancumsum(rec_map_df.mass), ms_RateMap.left)
+    ### np.interp(query, given_x, given_f(x))
+    pos_array = np.interp(M_array, ms_RateMap.get_cumulative_mass(ms_RateMap.right), ms_RateMap.right)
     pos_array = pos_array.astype(int)
     return pos_array
 
