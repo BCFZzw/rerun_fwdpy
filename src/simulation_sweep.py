@@ -23,17 +23,25 @@ def add_neu_mutations(pop, mut_rate, seed):
     nmuts = fwdpy11.infinite_sites(fwdpy11.GSLrng(seed), pop_with_mut, mut_rate)
     return nmuts, pop_with_mut
 
-savePath = "/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/src/test/test_simulations"
+savePath = "/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/src/test/test_simulations_rec_times5"
 
-Nielsen_R = 500 #4NLp
-Nielsen_theta = 0.002 #4Nmu
-Nielsen_alpha = 500 #2Ns
+#Nielsen_R = 500 #4NLp
+#Nielsen_theta = 0.002 #4Nmu
+#Nielsen_alpha = 500 #2Ns
 
-n_sample = 500
+#rec_rate = Nielsen_R/4/n_sample/sim_region # mean # of breakpoints per diploid per generation
+#mut_rate = Nielsen_theta/4/n_sample/2*sim_region #per haploid genome specified by fwdpy11
+#sel_coeff = Nielsen_alpha/2/n_sample
+
+### using scaling factors
+Ne_YRI_4J17 = 23721
+n_sample = 2000
 sim_region = int(1e6)
-rec_rate = Nielsen_R/4/n_sample/sim_region # mean # of breakpoints per diploid per generation
-mut_rate = Nielsen_theta/4/n_sample/2*sim_region #per haploid genome specified by fwdpy11
-sel_coeff = Nielsen_alpha/2/n_sample
+scaling_factor = Ne_YRI_4J17/n_sample
+rec_rate = 1e-8 * scaling_factor*5
+mut_rate = 1.44e-8 * scaling_factor
+sel_coeff = 0.01 * scaling_factor
+sim_gen = 200
 
 pdict = {
         "recregions": [fwdpy11.PoissonInterval(0, sim_region, sim_region*rec_rate, discrete=True)],
@@ -41,7 +49,7 @@ pdict = {
         "gvalue": fwdpy11.Multiplicative(2.0),
         "rates": (0, 0, None),
         "prune_selected": False,
-        "simlen": 200,
+        "simlen": sim_gen,
         ### burnin minimum 10 from heuristic and from Ferrari et al, 2025
         "demography": fwdpy11.ForwardDemesGraph.tubes([n_sample], burnin=10)
 }
@@ -89,25 +97,18 @@ while sim_i < simulation_iteration:
         start_seed = start_seed + 1
         continue
     assert output.pop.generation == output.pop.fixation_times[0]
-    ### Record fixation time
-
+    
     for i in range(0, post_fix_iteration):
         neutral_simulation(output.pop, params_post_fix, seed)
-        nmuts, pop_with_mut = add_neu_mutations(output.pop, mut_rate, seed)
+        nmuts, pop_with_mut = add_neu_mutations(output.pop, mut_rate * sim_region, seed)
         print(f"{nmuts} mutations added to sweep at post fixation gen {i*post_fix_gen}")
         outfile = os.path.join(savePath, "_".join(["sweep", str(seed), "post_fix", str(i*post_fix_gen), "gen"]) + ".trees")
         sweep_ts = pop_with_mut.dump_tables_to_tskit()
         sweep_ts.dump(outfile)
     
     sim_i = sim_i + 1
+    
 
-### what time I put for neutral evolution?
-#neutral_pop = fwdpy11.DiploidPopulation(n_sample, sim_region)
-#neutral_simulation(neutral_pop, params, seed)
-#nmuts, pop_with_mut = add_neu_mutations(neutral_pop, mut_rate, seed)
-#print(f"{nmuts} mutations added to neutral background")
-#neutral_prefix = os.path.join(savePath, "neutral", "neutral_" + str(seed))
-#neutral_ts = neutral_pop.dump_tables_to_tskit()
 
 
 
