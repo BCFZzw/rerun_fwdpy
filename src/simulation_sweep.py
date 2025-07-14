@@ -16,14 +16,16 @@ import copy
 
 def neutral_simulation(pop, params, seed):
     ### Mutations are added to the population after neutral simulations.
-    fwdpy11.evolvets(fwdpy11.GSLrng(seed), pop, params, simplification_interval = 10)
+    pop_evolved = copy.deepcopy(pop)
+    fwdpy11.evolvets(fwdpy11.GSLrng(seed), pop_evolved, params, simplification_interval = 10)
+    return pop_evolved
 
 def add_neu_mutations(pop, mut_rate, seed):
     pop_with_mut = copy.deepcopy(pop)
     nmuts = fwdpy11.infinite_sites(fwdpy11.GSLrng(seed), pop_with_mut, mut_rate)
     return nmuts, pop_with_mut
 
-savePath = "/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/src/test/test_simulations_rec_times5"
+savePath = "/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/src/test/test_simulations_post_fix_1000"
 
 #Nielsen_R = 500 #4NLp
 #Nielsen_theta = 0.002 #4Nmu
@@ -34,11 +36,11 @@ savePath = "/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulati
 #sel_coeff = Nielsen_alpha/2/n_sample
 
 ### using scaling factors
-Ne_YRI_4J17 = 23721
+Ne = 20000
 n_sample = 2000
 sim_region = int(1e6)
-scaling_factor = Ne_YRI_4J17/n_sample
-rec_rate = 1e-8 * scaling_factor*5
+scaling_factor = Ne/n_sample ### scaling factor = 10
+rec_rate = 1.25e-8 * scaling_factor
 mut_rate = 1.44e-8 * scaling_factor
 sel_coeff = 0.01 * scaling_factor
 sim_gen = 200
@@ -62,13 +64,11 @@ sweep_site = fwdpy11.conditional_models.NewMutationParameters(
 )
 
 ### Post fixation parameters
-post_fix_gen = 10
-post_fix_iteration = 10
-pdict_post_fix = pdict.copy()
-pdict_post_fix["simlen"] = post_fix_gen
-params_post_fix = fwdpy11.ModelParams(**pdict_post_fix)
+### Log scale post fixation times , in terms of Ne
+post_fix_time = [0.025, 0.05, 0.1, 0.25, 0.5]
+post_fix_gen_arr = [int(t * n_sample) for t in post_fix_time]
 
-simulation_iteration = 100
+simulation_iteration = 1000
 start_seed = 5553
 sim_i = 0
 
@@ -97,12 +97,31 @@ while sim_i < simulation_iteration:
         start_seed = start_seed + 1
         continue
     assert output.pop.generation == output.pop.fixation_times[0]
+
+    ### At fixation, deep copy the tree to add mutiatons, save tree.
+    nmuts, sweep_fix_mut = add_neu_mutations(output.pop, mut_rate * sim_region, seed)
+    print(f"{nmuts} mutations added to sweep at fixation")
+    outfile = os.path.join(savePath, "_".join(["sweep", str(seed), "fixation"]) + ".trees")
+    sweep_ts = sweep_fix_mut.dump_tables_to_tskit()
+    sweep_ts.dump(outfile)
     
-    for i in range(0, post_fix_iteration):
-        neutral_simulation(output.pop, params_post_fix, seed)
-        nmuts, pop_with_mut = add_neu_mutations(output.pop, mut_rate * sim_region, seed)
-        print(f"{nmuts} mutations added to sweep at post fixation gen {i*post_fix_gen}")
-        outfile = os.path.join(savePath, "_".join(["sweep", str(seed), "post_fix", str(i*post_fix_gen), "gen"]) + ".trees")
+    for post_fix_gen in post_fix_gen_arr:
+        pdict_post_fix = {
+            "recregions": [fwdpy11.PoissonInterval(0, sim_region, sim_region*rec_rate, discrete=True)],
+            "gvalue": fwdpy11.Multiplicative(2.0),
+            "rates": (0, 0, None),
+            "prune_selected": False,
+            "simlen": post_fix_gen,
+            "demography": fwdpy11.ForwardDemesGraph.tubes([n_sample], burnin=10)
+        }
+        params_post_fix = fwdpy11.ModelParams(**pdict_post_fix)
+        ### Continue neutrally evolving the population, stop at each iteration
+        pop_post_fix = neutral_simulation(output.pop, params_post_fix, seed)
+        assert pop_post_fix.generation == output.pop.fixation_times[0] + post_fix_gen
+        ### After stopping, deep copy the popualtion and add the mutations
+        nmuts, pop_with_mut = add_neu_mutations(pop_post_fix, mut_rate * sim_region, seed)
+        print(f"{nmuts} mutations added to sweep at post fixation gen {post_fix_gen}")
+        outfile = os.path.join(savePath, "_".join(["sweep", str(seed), "post_fix", str(post_fix_gen), "gen"]) + ".trees")
         sweep_ts = pop_with_mut.dump_tables_to_tskit()
         sweep_ts.dump(outfile)
     
