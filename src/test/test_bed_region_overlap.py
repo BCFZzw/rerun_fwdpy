@@ -54,30 +54,15 @@ class Test_parse_vcf(unittest.TestCase):
         cols = ["Chr", "Start", "End", "Chr2", "Start2", "End2", "Score"]
         rename_df(df, cols)
         group_df = group_intersect_results(df, {"Score": "first"})
-        print(group_df)
-        
-
-    def test_intersect_windows_get_overlap(self):
-        df = read_bedfile(self.bed1)
-        intersect_df = intersect_windows(df, self.bed2_freq, wo = True)
-        print(intersect_df)
-        ratio_df = intersect_windows_get_overlap(df, self.bed2_freq, group_ops = {4 : "sum"})
-        print(ratio_df)
-        assert np.all(ratio_df == pd.DataFrame({"chr" : ["chr1"],
-            "window_start" : [10], "window_end": [100],
-            "overlap" : [20], 
-            "window_size" : [90], "overlap_ratio": [20/90.]
+        assert np.all(group_df == pd.DataFrame({"Chr" : ["chr1"],
+            "Start" : [10], "End": [100], "Score" : [10]
         }))
+        
 
     def test_check_overlapping_features(self):
         assert check_overlapping_features(self.bed1) == True
         assert check_overlapping_features(self.bed2) == False
 
-    def test_intersect_windows_get_overlap_assertion(self):
-        df = read_bedfile(self.bed1)
-        with self.assertRaises(ValueError):
-            ratio_df = intersect_windows_get_overlap(df, self.bed1)
-        
 
 
 if __name__ == '__main__':

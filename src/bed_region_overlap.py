@@ -35,9 +35,9 @@ def intersect_windows(df, bed, **kwargs) -> pd.DataFrame:
     Assume non-overlapped features in the bed file.
     Using kwargs to specify which bed operations to use.
     """
+    df_bed = convert_dataframe_to_bed(df)
     if check_overlapping_features(bed):
         raise ValueError("Bed file contains overlapping features.")
-    df_bed = convert_dataframe_to_bed(df)
     intersect_df = intersect_2_bed(df_bed, bed, **kwargs)
     return intersect_df
 
@@ -46,15 +46,15 @@ def group_intersect_results(intersect_df, group_ops: dict):
     Using group_ops to specify the dict in pd.DataFrame.agg() functions. Grouping will be done using the first three columns, which is the ["chrom", "start", "end"] in the default pybedtools intersect output . Grouping Dict should be of form {column_index : function operation}
     """
     cols = intersect_df.columns
+    print(cols)
+    assert len(cols) > 3
     position_cols = list(cols[:3])
     sorted_keys = list(group_ops.keys())
     ### sort the column index in order to make sure output is in order
-    sorted_keys.sort()
-    #assert len(cols) > sorted_keys[-1]
     agg_dict = {}
     for key in sorted_keys:
-        if not (key in cols):
-            raise ValueError("Aggregate keys not in columns")
+        if not (key in cols[3:]):
+            raise ValueError("Aggregate keys not in ungroupped columns")
         agg_dict[key] = group_ops[key]
     ### the first 3 columns will always be this
     group_df = intersect_df.groupby(position_cols).agg(agg_dict).reset_index()
@@ -72,6 +72,7 @@ def rename_df(df, rename_cols: list):
 
 def intersect_windows_get_overlap(df, bed, group_ops: dict) -> pd.DataFrame:
     """
+    Deprecated
     -wo is used in bedtools intersect to get the ratio of overlap.
     Assumes non-overlapped bed track features.
     """
@@ -85,6 +86,7 @@ def intersect_windows_get_overlap(df, bed, group_ops: dict) -> pd.DataFrame:
 
 def intersect_windows_get_overlap_freq(df, bedfile, group_ops:dict) -> pd.DataFrame:
     """
+    Deprecated
     -wo is used in bedtools intersect to get the ratio of overlap and maximum frequency of the overalpped tracks.
     Assumes non-overlapped bed track features.
     """
@@ -97,16 +99,22 @@ def intersect_windows_get_overlap_freq(df, bedfile, group_ops:dict) -> pd.DataFr
     freq_df["overlap_ratio"] = freq_df["overlap"]/freq_df["window_size"]
     return freq_df
 
+
 def check_overlapping_features(bed) -> bool:
     """
     Check if all bed file features are non-overlapping.
     Bed regions are left-open and right-closed.
     Features are checked per chromosomes.
+    Taking the first 3 columns as chrom, start, end for checking overlaps.
     """
     df = read_bedfile(bed)
-    for chrom in df["chrom"].unique():
-        chr_region_start = df[df["chrom"] == chrom]["start"].to_list()
-        chr_region_end = df[df["chrom"] == chrom]["end"].to_list()
+    cols = df.columns
+    col1 = cols[0]
+    col2 = cols[1]
+    col3 = cols[2]
+    for chrom in df[col1].unique():
+        chr_region_start = df[df[col1] == chrom][col2].to_list()
+        chr_region_end = df[df[col1] == chrom][col3].to_list()
         intervals = [pd.Interval(*regions, closed = "right") for regions in zip(chr_region_start, chr_region_end)]
         interval_arr =  pd.arrays.IntervalArray(intervals)
         if not interval_arr.is_non_overlapping_monotonic:
