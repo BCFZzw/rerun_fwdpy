@@ -60,32 +60,28 @@ def group_intersect_results(intersect_df, group_ops: dict):
 
     
 
-def intersect_windows_get_overlap(df, bed) -> pd.DataFrame:
+def intersect_windows_get_overlap(df, bed, group_ops: dict) -> pd.DataFrame:
     """
     -wo is used in bedtools intersect to get the ratio of overlap.
     Assumes non-overlapped bed track features.
     """
     intersect_df = intersect_windows(df, bed, wo = True)
     ### column 6 is the number of bp overlapped
-    ratio_df = group_intersect_results(intersect_df, group_ops = {6 : "sum"})
-    #intersect_df.columns = ["chr", "window_start", "window_end", "bed_chr", "bed_start", "bed_end", "overlap"]
-    #ratio_df = intersect_df.groupby(["chr", "window_start", "window_end"])["overlap"].sum().reset_index()
+    ratio_df = group_intersect_results(intersect_df, group_ops = group_ops)
     ratio_df.columns = ["chr", "window_start", "window_end", "overlap"]
     ratio_df["window_size"] = ratio_df["window_end"] - ratio_df["window_start"]
     ratio_df["overlap_ratio"] = ratio_df["overlap"]/ratio_df["window_size"]
     return ratio_df
 
-def intersect_windows_get_overlap_freq(df, bedfile):
+def intersect_windows_get_overlap_freq(df, bedfile, group_ops:dict) -> pd.DataFrame:
     """
-    -wo is used in bedtools intersect to get the ratio of overlap.
+    -wo is used in bedtools intersect to get the ratio of overlap and maximum frequency of the overalpped tracks.
     Assumes non-overlapped bed track features.
     """
     intersect_df = intersect_windows(df, bed, wo = True)
     ### column 6 is frequency
     ### column 7 is the number of bp overlapped
-    freq_df = group_intersect_results(intersect_df, group_ops = {6 : "max", 7 :"sum"})
-    #intersect_df.columns = ["chr", "window_start", "window_end", "bed_chr", "bed_start", "bed_end", "overlap", "freq"]
-    #freq_df = intersect_df.groupby(["chr", "window_start", "window_end"]).agg({ "overlap": "sum", "freq": "max"}).reset_index()
+    freq_df = group_intersect_results(intersect_df, group_ops = group_ops)
     freq_df.columns = ["chr", "window_start", "window_end", "freq", "overlap"]
     freq_df["window_size"] = freq_df["window_end"] - freq_df["window_start"]
     freq_df["overlap_ratio"] = freq_df["overlap"]/freq_df["window_size"]
