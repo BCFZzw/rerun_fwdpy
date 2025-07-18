@@ -15,13 +15,13 @@ class Test_parse_vcf(unittest.TestCase):
     pybedtools.helpers.set_bedtools_path(path='/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/bedtools/2.31.0/bin/')
 
     def test_intersect_2_bed_u(self):
-        df = intersect_2_bed(self.bed1, self.bed2, u = True)
+        df = bed_to_dataframe(intersect_2_bed(self.bed1, self.bed2, u = True))
         assert np.all(df == pd.DataFrame({"chrom" : ["chr1"],
             "start" : [10], "end": [100]
         }))
 
     def test_intersect_2_bed_wo(self):
-        df = intersect_2_bed(self.bed1, self.bed2, wo = True)
+        df = bed_to_dataframe(intersect_2_bed(self.bed1, self.bed2, wo = True))
         assert np.all(df == pd.DataFrame({"chrom" : ["chr1", "chr1"],
             "start" : [10, 10], "end": [100, 100], "name":  ["chr1", "chr1"], "score" : [10, 20], "strand": [20, 30], "thickStart" : [10, 10]
         }))
@@ -29,7 +29,7 @@ class Test_parse_vcf(unittest.TestCase):
     def test_intersect_2_bed_v(self):
         bed1 = pybedtools.BedTool(self.bed1)
         bed2 = pybedtools.BedTool(self.bed2)
-        df = intersect_2_bed(bed1, bed2, v = True)
+        df = bed_to_dataframe(intersect_2_bed(bed1, bed2, v = True))
         assert np.all(df == pd.DataFrame({"chrom" : ["chr2", "chr3", "chr3"],
             "start" : [10, 10, 10], "end": [200, 20, 100]
         }))
@@ -42,7 +42,7 @@ class Test_parse_vcf(unittest.TestCase):
         }))
 
     def test_rename_df(self):
-        df = intersect_2_bed(self.bed1, self.bed2, wo = True)
+        df = bed_to_dataframe(intersect_2_bed(self.bed1, self.bed2, wo = True))
         cols = ["Chr", "Start", "End", "Chr2", "Start2", "End2", "Score"]
         rename_df(df, cols)
         assert np.all(df == pd.DataFrame({"Chr" : ["chr1", "chr1"],
@@ -50,7 +50,7 @@ class Test_parse_vcf(unittest.TestCase):
         }))
 
     def test_group_intersect_results(self):
-        df = intersect_2_bed(self.bed1, self.bed2, wo = True)
+        df = bed_to_dataframe(intersect_2_bed(self.bed1, self.bed2, wo = True))
         cols = ["Chr", "Start", "End", "Chr2", "Start2", "End2", "Score"]
         rename_df(df, cols)
         group_df = group_intersect_results(df, {"Score": "first"})
