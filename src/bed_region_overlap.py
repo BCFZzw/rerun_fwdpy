@@ -46,17 +46,27 @@ def group_intersect_results(intersect_df, group_ops: dict):
     Using group_ops to specify the dict in pd.DataFrame.agg() functions. Grouping will be done using the first three columns, which is the ["chrom", "start", "end"] in the default pybedtools intersect output . Grouping Dict should be of form {column_index : function operation}
     """
     cols = intersect_df.columns
+    position_cols = list(cols[:3])
     sorted_keys = list(group_ops.keys())
     ### sort the column index in order to make sure output is in order
     sorted_keys.sort()
-    assert len(cols) > sorted_keys[-1]
+    #assert len(cols) > sorted_keys[-1]
     agg_dict = {}
     for key in sorted_keys:
-        group_col = cols[key]
-        agg_dict[group_col] = group_ops[key]
+        if not (key in cols):
+            raise ValueError("Aggregate keys not in columns")
+        agg_dict[key] = group_ops[key]
     ### the first 3 columns will always be this
-    group_df = intersect_df.groupby(["chrom", "start", "end"]).agg(agg_dict).reset_index()
+    group_df = intersect_df.groupby(position_cols).agg(agg_dict).reset_index()
     return group_df
+
+
+def rename_df(df, rename_cols: list):
+    """
+    bedtools by default names the merged file with bed columns 1-12 (what is after 1-12?)
+    """
+    assert np.shape(df.columns) == np.shape(rename_cols)
+    df.columns = rename_cols
 
     
 

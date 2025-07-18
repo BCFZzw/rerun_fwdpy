@@ -11,6 +11,7 @@ class Test_parse_vcf(unittest.TestCase):
     bed1 = "test1.bed"
     bed1_non_overlap = "test1_non_overlap.bed"
     bed2 = "test2.bed"
+    bed2_freq = "test2_freq.bed"
     pybedtools.helpers.set_bedtools_path(path='/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/bedtools/2.31.0/bin/')
 
     def test_intersect_2_bed_u(self):
@@ -33,8 +34,35 @@ class Test_parse_vcf(unittest.TestCase):
             "start" : [10, 10, 10], "end": [200, 20, 100]
         }))
 
+    def test_intersect_windows(self):
+        df = read_bedfile(self.bed1)
+        intersect_df = intersect_windows(df, self.bed2, v = True)
+        assert np.all(intersect_df == pd.DataFrame({"chrom" : ["chr2", "chr3", "chr3"],
+            "start" : [10, 10, 10], "end": [200, 20, 100]
+        }))
+
+    def test_rename_df(self):
+        df = intersect_2_bed(self.bed1, self.bed2, wo = True)
+        cols = ["Chr", "Start", "End", "Chr2", "Start2", "End2", "Score"]
+        rename_df(df, cols)
+        assert np.all(df == pd.DataFrame({"Chr" : ["chr1", "chr1"],
+            "Start" : [10, 10], "End": [100, 100], "Chr2":  ["chr1", "chr1"], "Start2" : [10, 20], "End2": [20, 30], "Score" : [10, 10]
+        }))
+
+    def test_group_intersect_results(self):
+        df = intersect_2_bed(self.bed1, self.bed2, wo = True)
+        cols = ["Chr", "Start", "End", "Chr2", "Start2", "End2", "Score"]
+        rename_df(df, cols)
+        group_df = group_intersect_results(df, {"Score": "first"})
+        print(group_df)
+        
+
     def test_intersect_windows_get_overlap(self):
-        ratio_df = intersect_windows_get_overlap(self.bed1_non_overlap, self.bed2)
+        df = read_bedfile(self.bed1)
+        intersect_df = intersect_windows(df, self.bed2_freq, wo = True)
+        print(intersect_df)
+        ratio_df = intersect_windows_get_overlap(df, self.bed2_freq, group_ops = {4 : "sum"})
+        print(ratio_df)
         assert np.all(ratio_df == pd.DataFrame({"chr" : ["chr1"],
             "window_start" : [10], "window_end": [100],
             "overlap" : [20], 
@@ -46,8 +74,9 @@ class Test_parse_vcf(unittest.TestCase):
         assert check_overlapping_features(self.bed2) == False
 
     def test_intersect_windows_get_overlap_assertion(self):
+        df = read_bedfile(self.bed1)
         with self.assertRaises(ValueError):
-            ratio_df = intersect_windows_get_overlap(self.bed2, self.bed1)
+            ratio_df = intersect_windows_get_overlap(df, self.bed1)
         
 
 
