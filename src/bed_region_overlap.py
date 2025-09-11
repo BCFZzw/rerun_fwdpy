@@ -8,6 +8,7 @@ import pybedtools
 
 
 def read_bedfile(path: str) -> pd.DataFrame :
+    ### Requires bed file with no header
     bed = pybedtools.BedTool(path)
     bed_df = bed.to_dataframe()
     return bed_df 
@@ -30,6 +31,16 @@ def intersect_2_bed(bed1, bed2, **kwargs) -> pd.DataFrame:
 
 def bed_to_dataframe(bed, **kwargs):
     return bed.to_dataframe(**kwargs)
+
+def replace_na(df, col, col_type):
+    """
+    Sometimes bedtools intersect will return "." to indicate no data.
+    When converting to the dataframe, the "." is seen as a string, and often makes the column object type.
+    This function converts "." as None in the column and re-convert the type for proper analysis
+    """
+    df_copy = df.copy()
+    df_copy[col] = df_copy[col].replace(".", None).astype(col_type)
+    return df_copy
 
 
 def intersect_windows(df, bed, rename_cols = None, **kwargs) -> pd.DataFrame:
