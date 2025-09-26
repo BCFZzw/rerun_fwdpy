@@ -34,7 +34,7 @@ if super_pop is None:
     super_pop_prefix = "ALL"
 
 
-LD_unfiltered_dict, LD_filtered_dict = record_moments_LD(zarr_path, window_list, panel_file = panel_file, threshold = threshold, super_pop = super_pop_prefix, pop = pop)
+LD_unfiltered_dict, LD_filtered_dict = record_moments_LD(zarr_path, window_list, panel_file = panel_file, threshold = threshold, super_pop = super_pop, pop = pop)
 
 
 
