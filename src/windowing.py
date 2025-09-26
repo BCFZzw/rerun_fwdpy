@@ -3,7 +3,23 @@ import msprime as ms
 import numpy as np
 
 
-def msprime_read_HapMap(path: str, position_col = 1, rate_col = 2 ) -> ms.RateMap:
+def msprime_read_Plink(path: str) -> ms.RateMap:
+    """
+    Require msprime >= 1.0.0
+    Read Plink format, which is a cumulative sum of recombiantion rates.
+    """
+    df = pd.read_csv(path, names = ["chr", "dot", "cum_mass", "pos"], sep = " ")
+    pos = df.pos
+    rate = df.cum_mass.diff() / df.pos.diff() / 100 
+    ### Adding 0 for pos and 0 for rate as padding directly read RateMap
+    pos = [0] + pos.to_list()
+    rate = [0] + rate[1:].to_list()
+    ms_RateMap = ms.RateMap(position= pos , rate = rate)
+    return ms_RateMap
+
+
+
+def msprime_read_HapMap(path: str) -> ms.RateMap:
     """
     Require msprime >= 1.0.0
     Read the recombination map using msprime functionality.
@@ -13,7 +29,7 @@ def msprime_read_HapMap(path: str, position_col = 1, rate_col = 2 ) -> ms.RateMa
     The 2 columns must be Position(bp), and Rate(cM/Mb). Default for them to take the second and third columns. 
     The return will be a msprime RateMap object, with position in bp, and rate in M/bp.
     """
-    ms_RateMap = ms.RateMap.read_hapmap(path, position_col= position_col , rate_col = rate_col)
+    ms_RateMap = ms.RateMap.read_hapmap(path, position_col= 1 , rate_col = 2)
     return ms_RateMap
 
 
@@ -37,14 +53,19 @@ def get_cum_cM_from_bp(pos_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
     return ms_RateMap.get_cumulative_mass(pos_list)*100
 
 
-def window_by_recombination(rec_map_path: str, position_col = 1, rate_col = 2, rec_step = 0.04, pos_start = None, pos_end = None) -> pd.DataFrame:
+def window_by_recombination(rec_map_path: str, rate_map_type: str, rec_step = 0.04, pos_start = None, pos_end = None) -> pd.DataFrame:
     """
     Return a dataframe of non-overlapping windows of fixed recombination rate calculated from the provided rate map. Units are in centi-Morgan.
     The user can specify a position start and end to calculate the windows.
     The first window will be equal to the rate map start or position start, whichever is larger.
     The last window will be last full-length window of rec_step size, equal or smaller than rate map end or position end.
     """
-    ms_RateMap = msprime_read_HapMap(rec_map_path, position_col= position_col , rate_col = rate_col)
+    if rate_map_type == "HapMap":
+        ms_RateMap = msprime_read_HapMap(rec_map_path)
+    elif rate_map_type == "Plink":
+        ms_RateMap = msprime_read_Plink(rec_map_path)
+    else:
+        raise ValueError("The type of recombination map is not 'HapMap' or 'Plink'.")
     if (pos_start is None):
         pos_start = 0
     if (pos_end is None):
