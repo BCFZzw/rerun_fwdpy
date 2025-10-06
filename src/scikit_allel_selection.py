@@ -3,14 +3,16 @@ import os
 import numpy as np
 import pandas as pd
 import parse_vcf
-np.seterr(divide='ignore', invalid='ignore') ### ignore numpy undefined division 
+np.seterr(divide='ignore', invalid='ignore') ### ignore allel fst.py numpy undefined division 
 
 ### Probably double-check another paper with how scanning and windows are handled
 
 def genotype_dask_to_allele_count(genotype_dask, pos_array, pos_start, pos_end):
-    genotype_var_dask = parse_vcf.select_variants(genotype_dask, pos_array, pos_start, pos_end)
-    genotype_var = genotype_dask.compute()
-    pos_array_np = np.array(pos_array)
+    genotype_var_dask, pos_var_array = parse_vcf.select_variants(genotype_dask, pos_array, pos_start, pos_end)
+    if len(pos_var_array) == 0:
+        return np.array([]), np.array([])
+    genotype_var = genotype_var_dask.compute()
+    pos_array_np = np.array(pos_var_array)
     genotype_ac = genotype_var.count_alleles()
     return genotype_ac, pos_array_np
 
@@ -36,6 +38,8 @@ def allel_PBS(zarr_path, panel_file, pop1_ID, pop2_ID, pop3_ID, step = 100000):
             pos_end = pos_array[0] + (i+1)*step - 1
 
         genotype_ac_pop1, pos_ac = genotype_dask_to_allele_count(genotype_pop1, pos_array = pos_array, pos_start = pos_start, pos_end = pos_end)
+        if len(pos_ac) == 0 :
+            continue
         genotype_ac_pop2, _ = genotype_dask_to_allele_count(genotype_pop2, pos_array = pos_array, pos_start = pos_start, pos_end = pos_end)
         genotype_ac_pop3, _ = genotype_dask_to_allele_count(genotype_pop3, pos_array = pos_array, pos_start = pos_start, pos_end = pos_end)
 
