@@ -9,6 +9,7 @@ np.seterr(divide='ignore', invalid='ignore') ### ignore allel fst.py numpy undef
 def genotype_to_haplotype(genotype):
     return genotype.to_haplotypes()
 
+
 def genotype_to_allele_count(genotype):
     return genotype.count_alleles()
 
@@ -54,10 +55,10 @@ def allel_PBS(zarr_path, panel_file, pop1_ID, pop2_ID, pop3_ID, step = 100000):
     return PBS_dict
 
 
-
 def normalization(score, ac_array):
     ### standardize score by allele count
     return allel.standardize_by_allele_count(score, ac_array)
+
 
 def allel_iHS(haplotype, pos_array, normalize = True):
     ### Need standardization by allele count
@@ -76,4 +77,4 @@ def allel_NSL(haplotype):
     if normalize:
         ac_array = haplotype_to_allele_count(haplotype)
         NSL_score = normalization(NSL_score, ac_array)
-    return 
+    return NSL_score
