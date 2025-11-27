@@ -16,6 +16,7 @@ def window_roh(genotype: allel.GenotypeArray, pos_array: np.array, contig_size):
     Runs of homozygosity in fixed sized window. Calculated by poisson HMM.
     Fast but reduced resolution.
     """
+    genotype_vector = allel.GenotypeVector(genotype)
     df_roh, fraction_roh = allel.roh_poissonhmm(genotype, pos_array, contig_size = contig_size)
     return df_roh, fraction_roh 
 
