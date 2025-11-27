@@ -6,15 +6,16 @@ import parse_vcf
 np.seterr(divide='ignore', invalid='ignore') ### ignore allel fst.py numpy undefined division 
 
 ### Probably double-check another paper with how scanning and windows are handled
+def genotype_to_haplotype(genotype):
+    return genotype.to_haplotypes()
 
-def genotype_dask_to_allele_count(genotype_dask, pos_array, pos_start, pos_end):
-    genotype_var_dask, pos_var_array = parse_vcf.select_variants(genotype_dask, pos_array, pos_start, pos_end)
-    if len(pos_var_array) == 0:
-        return np.array([]), np.array([])
-    genotype_var = genotype_var_dask.compute()
-    pos_array_np = np.array(pos_var_array)
-    genotype_ac = genotype_var.count_alleles()
-    return genotype_ac, pos_array_np
+def genotype_to_allele_count(genotype):
+    return genotype.count_alleles()
+
+
+def haplotype_to_allele_count(haplotype):
+    return haplotype.count_alleles()
+
 
 def allel_PBS(zarr_path, panel_file, pop1_ID, pop2_ID, pop3_ID, step = 100000):
     ### Typically done on the single allele level, and normalized with allele windowing methods 
@@ -51,3 +52,28 @@ def allel_PBS(zarr_path, panel_file, pop1_ID, pop2_ID, pop3_ID, step = 100000):
     PBS_dict = {"PBS_list": PBS_list, "position": pos_list, "populations": [pop1_ID, pop2_ID, pop3_ID]}
 
     return PBS_dict
+
+
+
+def normalization(score, ac_array):
+    ### standardize score by allele count
+    return allel.standardize_by_allele_count(score, ac_array)
+
+def allel_iHS(haplotype, pos_array, normalize = True):
+    ### Need standardization by allele count
+    ### allel ihs will return NaN if first to last variants do not decay below min_ehh for haplotype homozygosity
+    ### Feed in all position at once?
+    iHS_score = allel.ihs(haplotype, pos_array, min_maf = 0, include_edges = True)
+    if normalize:
+        ac_array = haplotype_to_allele_count(haplotype)
+        iHS_score = normalization(iHS_score, ac_array)
+    return iHS_score
+
+
+def allel_NSL(haplotype):
+    ### Need standardization by allele count
+    NSL_score = allel.nsl(haplotype)
+    if normalize:
+        ac_array = haplotype_to_allele_count(haplotype)
+        NSL_score = normalization(NSL_score, ac_array)
+    return 
