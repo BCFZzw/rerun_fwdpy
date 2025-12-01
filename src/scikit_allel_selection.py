@@ -10,12 +10,13 @@ def genotype_to_haplotype(genotype):
     return genotype.to_haplotypes()
 
 
+def alternate_allele_count(genotype):
+    count_array = genotype.count_alleles()
+    return count_array[:, 1]
+
+
 def genotype_to_allele_count(genotype):
     return genotype.count_alleles()
-
-
-def haplotype_to_allele_count(haplotype):
-    return haplotype.count_alleles()
 
 
 def allel_PBS(zarr_path, panel_file, pop1_ID, pop2_ID, pop3_ID, step = 100000):
@@ -64,17 +65,23 @@ def allel_iHS(haplotype, pos_array, normalize = True):
     ### Need standardization by allele count
     ### allel ihs will return NaN if first to last variants do not decay below min_ehh for haplotype homozygosity
     ### Feed in all position at once?
-    iHS_score = allel.ihs(haplotype, pos_array, min_maf = 0, include_edges = True)
+    iHS_score = allel.ihs(haplotype, pos_array, include_edges = True)
     if normalize:
-        ac_array = haplotype_to_allele_count(haplotype)
-        iHS_score = normalization(iHS_score, ac_array)
+        ac_array = alternate_allele_count(haplotype)
+        iHS_score, _ = normalization(iHS_score, ac_array)
     return iHS_score
 
 
-def allel_NSL(haplotype):
+def allel_NSL(haplotype, normalize = True):
     ### Need standardization by allele count
     NSL_score = allel.nsl(haplotype)
     if normalize:
-        ac_array = haplotype_to_allele_count(haplotype)
-        NSL_score = normalization(NSL_score, ac_array)
+        ac_array = alternate_allele_count(haplotype)
+        NSL_scor, _ = normalization(NSL_score, ac_array)
     return NSL_score
+
+
+def allel_window_pi(genotype, pos_array, win_size):
+    ac_array = genotype_to_allele_count(genotype)
+    pi, windows, _, _ = allel.windowed_diversity(pos_array, ac_array, size = int(win_size))
+    return pi, windows
