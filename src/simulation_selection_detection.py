@@ -1,12 +1,12 @@
 import allel
 import numpy as np
 
-def tskit_to_allel(tree):
-    haplotype = allel.HaplotypeArray(tree.genotype_matrix())
-    genotype = haplotype.to_genotypes(ploidy = 2)
+def tskit_to_allel(tree, genotype = True):
+    data = allel.HaplotypeArray(tree.genotype_matrix())
+    if genotype:
+        data = haplotype.to_genotypes(ploidy = 2)
     pos_array = allel.SortedIndex(tree.sites_position)
-    return genotype, pos_array
-
+    return data, pos_array
 
 def locate_window_region(pos_array, win_start = None, win_end = None):
     """
@@ -41,14 +41,26 @@ def select_variants(genotype, pos_array, pos_start, pos_end):
     return genotype_var, pos_array_var
 
 
-def genotype_allele_counts(genotype: allel.GenotypeArray):
-    return genotype.count_alleles()
+def windowed_diversity(genotype: allel.GenotypeArray, pos_array: np.array, window_list: list):
+    ac = genotype.count_alleles()
+    pi, windows, n_bases, counts = allel.windowed_diversity(pos_array, ac, windows = window_list)
+    return pi
+
+
+def norm_iHS(haplotype: allel.HaplotypeArray, pos_array: np.array):
+    ### iHS is calculated for each variant, and then normalized by allele count
+    score = allel.ihs(haplotype, pos_array)
+    ac = haplotype.count_alleles()
+    aac = ac[:, 1]
+    norm_score, bins = allel.standardize_by_allele_count(score, aac)
+    return norm_score
 
 
 def windowed_tajima_D(genotype: allel.GenotypeArray, pos_array: np.array, window_list: list):
     genotype_ac = genotype_allele_counts(genotype)
     tajima_D_list, windows, counts = allel.windowed_tajima_d(pos_array, genotype_ac, windows = window_list)
     return tajima_D_list, windows, counts
+
 
 def window_roh(genotype: allel.GenotypeArray, pos_array: np.array, contig_size):
     """
@@ -58,6 +70,7 @@ def window_roh(genotype: allel.GenotypeArray, pos_array: np.array, contig_size):
     genotype_vector = allel.GenotypeVector(genotype)
     df_roh, fraction_roh = allel.roh_poissonhmm(genotype, pos_array, contig_size = contig_size)
     return df_roh, fraction_roh 
+
 
 #def pop_branching_stats(genotype1, genotype2, genotype3, )
 
