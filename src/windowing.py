@@ -98,4 +98,4 @@ def window_to_bed(savePath: str, window_df: pd.DataFrame, chromosome = "."):
     """
     df = window_df.copy()
     df.insert(loc=0, column='chr', value= chromosome)
-    df.to_csv(savePath, sep = "\t", index = False, header = ["chr", "window_start", "window_end", "cum_rec_rate_at_start(cM)"])
+    df.to_csv(savePath, sep = "\t", index = False, header = ["chr", "window_start", "window_end", "cum_rec_rate_at_start(cM)"], float_format='%.2f')
