@@ -46,12 +46,10 @@ def read_jackknife(np_save_path, chromosome):
     df["_".join(["sigDz", "jk", jackknife_pop])] = df.Dz/df.pi2
     df.drop(["D2", "Dz", "D", "pi2"], inplace = True, axis = 1)
     df["chr"] = chromosome
+    ### sort cols
+
     return df
 
-def concatenate_filtered(df_list):
-    df_combined = pd.concat(df_list, axis = 0)
-    df_combined = df_combined.sort_values(by = ["chr", "window_start"]).reset_index(drop = True)
-    return df_combined
 
 def combine_jackknife(jackkife_df_list):
     merge_df = jackkife_df_list[0].copy()
@@ -67,17 +65,17 @@ def jackknife_std(jackknife_df, col_prefix):
     df = jackknife_df.copy()
     jackknife_cols = [cols for cols in df.columns if cols.startswith(col_prefix)]
     n_jackknife = len(jackknife_cols)
-    ### Row-wise jackknife and estimate the variance by *n/(n-1)
+    ### Row-wise mean of jackknife used to estimate the variance by *n-1/n
     mean_jackknife = df[jackknife_cols].mean(axis = 1)
     
     diff_jackknife = df[jackknife_cols].sub(mean_jackknife, axis = 0)
     sq_diff_jackknife = np.square(diff_jackknife)
-    
+    ### variances
     sum_sq_diff_jackknife = np.sum(sq_diff_jackknife, axis = 1)
     var_jackknife = sum_sq_diff_jackknife/(n_jackknife)*(n_jackknife-1)
     return np.sqrt(var_jackknife)
 
-def sort_jackknifle_cols(jackknife_df, default_cols: list):
+def sort_jackknife_cols(jackknife_df, default_cols: list):
     """
     Hard coded for the dataset
     """
@@ -97,26 +95,20 @@ def sort_jackknifle_cols(jackknife_df, default_cols: list):
 
 population_path="/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/src/output/"
 jackknife_path = "/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/src/jackknife_output"
-callable_path = "/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/blacklist/LD_windows.callable_overlap.merged.bed"
 output_path = "/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/src/jackknife_script/jackknife_combined"
+callable_path = "/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/blacklist/LD_windows.callable_overlap.merged.bed"
+gene_path = "/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/gene_regions/LD_windows.gene_region.merged.bed"
 
 
-populations = ["AMR", "SAS"]
-all_pops = "ALL"
-ALL_df = []
+populations = ["AFR", "AMR", "EAS", "EUR", "SAS"]
 pop_df_list = []
-default_cols = ['chr', 'window_start', 'window_end', 'window_size', 'snp_pairs', 'D2', 'Dz', 'D', 'pi2', 'sigD2', 'sigDz']
-callable_df = pd.read_csv(callable_path, sep = "\t")
+default_cols = ['chr', 'window_start', 'window_end', 'window_size', 'D2', 'Dz', 'D', 'pi2', 'sigD2', 'sigDz', 'std_jk_sigD2', 'std_jk_sigDz', 'callable', 'genes', 'population']
+float_cols = ['D2', 'Dz', 'D', 'pi2', 'sigD2', 'sigDz', 'std_jk_sigD2', 'std_jk_sigDz']
+#callable_df = pd.read_csv(callable_path, sep = "\t")
 merge_df_list =[]
 
-
-### read ALL
-for chr in range(1, 23):
-    chromosome = "chr" + str(chr)
-    all_pops_path = os.path.join(population_path, all_pops + "_chr", ".".join([chromosome, all_pops, "filtered.dict.npy"]))
-    ALL_df.append(read_filtered(all_pops_path, chromosome))
-
-ALL_merged = concatenate_filtered(ALL_df)
+callable_df = pd.read_csv(callable_path, sep = "\t")
+gene_df = pd.read_csv(gene_path, sep = "\t")
     
 ### read populations, jacknife need to be added per each chromosome (avoid listing all the subpops)
 for superpop in populations:
@@ -137,30 +129,26 @@ for superpop in populations:
         chr_df_list.append(merge_df)
     ### Add all chromosomes together
     pop_df = pd.concat(chr_df_list, axis = 0)
-    ### Sort columns
-    pop_df = sort_jackknifle_cols(pop_df, default_cols)
     ### Calculate std from jackknife across all chromosomes
-    pop_df["std_jk_sigDz"] = jackknife_std(pop_df, "sigDz_jk")
     pop_df["std_jk_sigD2"] = jackknife_std(pop_df, "sigD2_jk")
+    pop_df["std_jk_sigDz"] = jackknife_std(pop_df, "sigDz_jk")
+    ### add callable and gene columns
+    pop_df = pop_df.merge(callable_df, on = ["chr", "window_start", "window_end"], how = "outer")
+    pop_df = pop_df.merge(gene_df, on = ["chr", "window_start", "window_end"], how = "outer")
+    pop_df["callable"] = pop_df["callable"].fillna(0)
+    pop_df["callable"] = pop_df["callable"].astype(int)
     ### Sort by chromosomes
     pop_df["sort_chr"] = pop_df.chr.str.split("chr").str[1].astype(int)
     pop_df = pop_df.sort_values(["sort_chr", "window_start"]).reset_index(drop = True)
+    ### Add population label
+    pop_df["population"] = superpop
+    ### Sort columns
+    pop_df = sort_jackknife_cols(pop_df, default_cols)
     #jackknife_df = jackknife_df[[cols for cols in jackknife_df.columns if not cols.startswith("sigD2_jk")]]
     pop_df_list.append(pop_df)
 
 
 ### Save
 for superpop, superpop_df in zip(populations, pop_df_list):
-    superpop_df.to_csv(os.path.join(output_path, superpop + "_LD.jackknife_combined.tsv"), sep = "\t", index = False)
-
-#ALL_merged.to_csv(os.path.join(output_path,  "ALL_LD.jackknife_combined.tsv"), sep = "\t", index = False)
-
-### merge all files and add callable regions
-### snp pairs might be the same throughout 
-#callable_df = pd.read_csv(callable_path, sep = "\t")
-#merge_df = ALL_merged.merge(AFR_merged, on = ["chr", "window_start", "window_end", "window_size"], suffixes = ["", "_AFR"])
-#merge_df = merge_df.merge(EAS_merged, on = ["chr", "window_start", "window_end", "window_size"], suffixes = ["", "_EAS"])
-#merge_df = merge_df.merge(EUR_merged, on = ["chr", "window_start", "window_end", "window_size"], suffixes = ["", "_EUR"])
-#merge_df = merge_df.merge(callable_df, on = ["chr", "window_start", "window_end"])
-
-#merge_df.to_csv(os.path.join(output_path, "ALL_superpop_merged_LD.jackknife.tsv"), sep = "\t", index = False)
+    superpop_df.to_csv(os.path.join(output_path, superpop + "_LD.jackknife_combined_full.tsv.gz"), sep = "\t", index = False)
+    superpop_df[default_cols].to_csv(os.path.join(output_path, superpop + "_LD.jackknife_combined.tsv"), float_format = '%.3f', sep = "\t", index = False)
