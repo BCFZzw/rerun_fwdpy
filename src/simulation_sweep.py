@@ -13,7 +13,7 @@ import copy
 ### Update: directly save the tree sequences, without converting to VCFs.
 ### Read tree sequences using tskit for moments.
 
-class IncompleteSweep(object, stop_frequency):
+class IncompleteSweep(object):
     def __call__(
         self, pop: fwdpy11.DiploidPopulation, index: int, key: tuple
     ) -> fwdpy11.conditional_models.SimulationStatus:
@@ -55,9 +55,11 @@ savePath = "/home/alouette/projects/ctb-sgravel/alouette/Simulation/1.fixation_5
 
 ### using scaling factors
 Ne = 20000
-n_sample = 2000
+ne_scaled= 2000
+sampling_factor = 1
+n_sample = ne_scaled * sampling_factor
 sim_region = int(5e5)
-scaling_factor = Ne/n_sample ### scaling factor = 10
+scaling_factor = Ne/ne_scaled ### scaling factor = 10
 rec_rate = 1.25e-8 * scaling_factor
 mut_rate = 1.44e-8 * scaling_factor
 sel_coeff = 0.01 * scaling_factor
@@ -71,7 +73,7 @@ pdict = {
         "prune_selected": False,
         "simlen": sim_gen,
         ### burnin minimum 10 from heuristic and from Ferrari et al, 2025
-        "demography": fwdpy11.ForwardDemesGraph.tubes([n_sample], burnin=10)
+        "demography": fwdpy11.ForwardDemesGraph.tubes([ne_scaled], burnin=10)
 }
 params = fwdpy11.ModelParams(**pdict)
 
@@ -84,7 +86,7 @@ sweep_site = fwdpy11.conditional_models.NewMutationParameters(
 ### Post fixation parameters
 ### Log scale post fixation times , in terms of Ne
 post_fix_time = [0.025, 0.05, 0.1, 0.25, 0.5]
-post_fix_gen_arr = [int(t * n_sample) for t in post_fix_time]
+post_fix_gen_arr = [int(t * ne_scaled) for t in post_fix_time]
 
 simulation_iteration = 1000
 start_seed = 5553
@@ -94,8 +96,8 @@ sim_i = 0
 while sim_i < simulation_iteration:
     seed = start_seed + sim_i
     initial_ts = msprime.sim_ancestry(
-        samples=n_sample,
-        population_size=n_sample,
+        samples=ne_scaled,
+        population_size=ne_scaled,
         recombination_rate=rec_rate,
         random_seed=seed,
         sequence_length=sim_region,
@@ -131,7 +133,7 @@ while sim_i < simulation_iteration:
             "rates": (0, 0, None),
             "prune_selected": False,
             "simlen": post_fix_gen,
-            "demography": fwdpy11.ForwardDemesGraph.tubes([n_sample], burnin=10)
+            "demography": fwdpy11.ForwardDemesGraph.tubes([ne_scaled], burnin=10)
         }
         params_post_fix = fwdpy11.ModelParams(**pdict_post_fix)
         ### Continue neutrally evolving the population, stop at each iteration
