@@ -25,7 +25,7 @@ def add_neu_mutations(pop, mut_rate, seed):
     nmuts = fwdpy11.infinite_sites(fwdpy11.GSLrng(seed), pop_with_mut, mut_rate)
     return nmuts, pop_with_mut
 
-savePath = "/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulation_review/src/test/test_simulations_post_fix_1000"
+savePath = "/home/alouette/projects/ctb-sgravel/alouette/Simulation/1.fixation_5e5Mb_Q10"
 
 #Nielsen_R = 500 #4NLp
 #Nielsen_theta = 0.002 #4Nmu
@@ -38,7 +38,7 @@ savePath = "/home/alouette/projects/ctb-sgravel/alouette/Dz_sweep_final/simulati
 ### using scaling factors
 Ne = 20000
 n_sample = 2000
-sim_region = int(1e6)
+sim_region = int(5e5)
 scaling_factor = Ne/n_sample ### scaling factor = 10
 rec_rate = 1.25e-8 * scaling_factor
 mut_rate = 1.44e-8 * scaling_factor
@@ -106,6 +106,7 @@ while sim_i < simulation_iteration:
     sweep_ts.dump(outfile)
     
     for post_fix_gen in post_fix_gen_arr:
+        continue
         pdict_post_fix = {
             "recregions": [fwdpy11.PoissonInterval(0, sim_region, sim_region*rec_rate, discrete=True)],
             "gvalue": fwdpy11.Multiplicative(2.0),
