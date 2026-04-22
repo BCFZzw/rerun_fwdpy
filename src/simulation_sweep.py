@@ -13,6 +13,24 @@ import copy
 ### Update: directly save the tree sequences, without converting to VCFs.
 ### Read tree sequences using tskit for moments.
 
+class IncompleteSweep(object, stop_frequency):
+    def __call__(
+        self, pop: fwdpy11.DiploidPopulation, index: int, key: tuple
+    ) -> fwdpy11.conditional_models.SimulationStatus:
+        if pop.mutations[index].key != key:
+            # it is fixed or lost, neither of 
+            # which we want
+            return fwdpy11.conditional_models.SimulationStatus.Restart
+        if pop.mcounts[index] == 0:
+            return fwdpy11.conditional_models.SimulationStatus.Restart
+        
+        # Terminate the first time we see the 
+        # variant get about a freq above the frequency
+        if pop.mcounts[index] / 2 / pop.N >= stop_frequency:
+            return fwdpy11.conditional_models.SimulationStatus.Success
+        # make sure there's a valid return value
+        return fwdpy11.conditional_models.SimulationStatus.Continue
+
 
 def neutral_simulation(pop, params, seed):
     ### Mutations are added to the population after neutral simulations.
