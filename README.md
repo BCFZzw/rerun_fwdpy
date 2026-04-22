@@ -1,4 +1,4 @@
-# rerun_fwdpy => simulation_1000G_Dz_revision
+# Documentation of Dz selective scan paper
 
 ## Environment setup for fwdpy11 and moments
 fwdpy11 manual: https://molpopgen.github.io/fwdpy11/intro.html# <br>
