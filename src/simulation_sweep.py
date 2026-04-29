@@ -6,6 +6,7 @@ import sys
 import os
 import msprime 
 import copy
+import math
 
 ### Adapted from fwdpy11 manual on selective sweep, https://molpopgen.github.io/fwdpy11/short_vignettes/incomplete_sweep.html
 
@@ -43,7 +44,24 @@ def add_neu_mutations(pop, mut_rate, seed):
     nmuts = fwdpy11.infinite_sites(fwdpy11.GSLrng(seed), pop_with_mut, mut_rate)
     return nmuts, pop_with_mut
 
-savePath = "/home/alouette/projects/ctb-sgravel/alouette/Simulation/1.fixation_5e5Mb_Q10"
+
+def sampling_individuals(tree, n_sample):
+    n_individuals = tree.num_individuals
+    if n_sample == n_individuals:
+        return copy.deepcopy(tree)
+    individual_ids = list(range(n_individuals)) ### currently it's just this list in 1 pop simulation
+    sample_ind_ids = np.random.choice(individual_ids, size = n_sample, replace = False)
+    ### extract nodes for diploid individuals
+    keep_nodes = []
+    for i in sample_ind_ids:
+        keep_nodes.extend(tree.individual(i).nodes)
+    sampled_tree = tree.simplify(keep_nodes)
+    return sampled_tree
+
+
+
+
+savePath = "/home/alouette/projects/ctb-sgravel/alouette/Simulation/3.fixation_sampled_0.01_5e5Mb_Q10"
 
 #Nielsen_R = 500 #4NLp
 #Nielsen_theta = 0.002 #4Nmu
@@ -56,8 +74,8 @@ savePath = "/home/alouette/projects/ctb-sgravel/alouette/Simulation/1.fixation_5
 ### using scaling factors
 Ne = 20000
 ne_scaled= 2000
-sampling_factor = 1
-n_sample = ne_scaled * sampling_factor
+sampling_factor = 0.01
+n_sample = int(ne_scaled * sampling_factor)
 sim_region = int(5e5)
 scaling_factor = Ne/ne_scaled ### scaling factor = 10
 rec_rate = 1.25e-8 * scaling_factor
@@ -123,7 +141,8 @@ while sim_i < simulation_iteration:
     print(f"{nmuts} mutations added to sweep at fixation")
     outfile = os.path.join(savePath, "_".join(["sweep", str(seed), "fixation"]) + ".trees")
     sweep_ts = sweep_fix_mut.dump_tables_to_tskit()
-    sweep_ts.dump(outfile)
+    sampled_ts = sampling_individuals(sweep_ts, n_sample)
+    sampled_ts.dump(outfile)
     
     for post_fix_gen in post_fix_gen_arr:
         continue
