@@ -74,8 +74,10 @@ def window_by_recombination(rec_map_path: str, rate_map_type: str, rec_step = 0.
         ms_RateMap = msprime_read_HapMap(rec_map_path)
     elif rate_map_type == "Plink":
         ms_RateMap = msprime_read_Plink(rec_map_path)
+    elif rate_map_type == "deCode":
+        ms_RateMap = msprime_read_deCode(rec_map_path)
     else:
-        raise ValueError("The type of recombination map is not 'HapMap' or 'Plink'.")
+        raise ValueError("The type of recombination map is not 'HapMap', 'Plink', or 'deCode' fromat.")
     if (pos_start is None):
         pos_start = 0
     if (pos_end is None):
