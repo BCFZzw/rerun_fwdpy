@@ -33,6 +33,16 @@ def msprime_read_HapMap(path: str) -> ms.RateMap:
     return ms_RateMap
 
 
+def msprime_read_deCode(path: str) -> ms.RateMap:
+    """
+    Require msprime >= 1.0.0
+    deCode mostly follow the HapMap format with Position(bp) in 2nd column, and Rate(cM/Mb) in 4th column.
+    deCode rate map must be separated into individual chromosomes first.
+    The return will be a msprime RateMap object, with position in bp, and rate in M/bp.
+    """
+    ms_RateMap = ms.RateMap.read_hapmap(path, position_col= 1 , rate_col = 3)
+    return ms_RateMap
+
 def get_bp_from_cum_cM(cM_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
     """
     Following msprime RateMap get_cumulative_mass functionality for the bp to cumulative cM convertion.
