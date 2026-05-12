@@ -13,7 +13,7 @@ def msprime_read_Plink(path: str) -> ms.RateMap:
     rate = df.cum_mass.diff() / df.pos.diff() / 100 
     ### Adding 0 for pos and 0 for rate as padding directly read RateMap
     pos = [0] + pos.to_list()
-    rate = [0] + rate[1:].to_list()
+    rate = [0] + rate[:-1].to_list()
     ms_RateMap = ms.RateMap(position= pos , rate = rate)
     return ms_RateMap
 
@@ -40,7 +40,7 @@ def msprime_read_deCode(path: str) -> ms.RateMap:
     deCode rate map must be separated into individual chromosomes first.
     The return will be a msprime RateMap object, with position in bp, and rate in M/bp.
     """
-    ms_RateMap = ms.RateMap.read_hapmap(path, position_col= 1 , rate_col = 3)
+    ms_RateMap = ms.RateMap.read_hapmap(path, position_col= 1 , map_col = 4)
     return ms_RateMap
 
 def get_bp_from_cum_cM(cM_list: list, ms_RateMap: ms.RateMap) -> np.ndarray:
