@@ -74,7 +74,7 @@ savePath = "/home/alouette/projects/ctb-sgravel/alouette/Simulation/3.fixation_s
 ### using scaling factors
 Ne = 20000
 ne_scaled= 2000
-sampling_factor = 0.01
+sampling_factor = 1
 n_sample = int(ne_scaled * sampling_factor)
 sim_region = int(5e5)
 scaling_factor = Ne/ne_scaled ### scaling factor = 10
