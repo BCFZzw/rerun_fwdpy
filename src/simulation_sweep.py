@@ -1,36 +1,22 @@
 import fwdpy11 
 import numpy as np 
-import fwdpy11.tskit_tools
 import fwdpy11.conditional_models
-import sys
 import os
 import msprime 
 import copy
-import math
-
-### Adapted from fwdpy11 manual on selective sweep, https://molpopgen.github.io/fwdpy11/short_vignettes/incomplete_sweep.html
+import argparse
 
 
 ### Update: directly save the tree sequences, without converting to VCFs.
 ### Read tree sequences using tskit for moments.
 
-class IncompleteSweep(object):
-    def __call__(
-        self, pop: fwdpy11.DiploidPopulation, index: int, key: tuple
-    ) -> fwdpy11.conditional_models.SimulationStatus:
-        if pop.mutations[index].key != key:
-            # it is fixed or lost, neither of 
-            # which we want
-            return fwdpy11.conditional_models.SimulationStatus.Restart
-        if pop.mcounts[index] == 0:
-            return fwdpy11.conditional_models.SimulationStatus.Restart
-        
-        # Terminate the first time we see the 
-        # variant get about a freq above the frequency
-        if pop.mcounts[index] / 2 / pop.N >= stop_frequency:
-            return fwdpy11.conditional_models.SimulationStatus.Success
-        # make sure there's a valid return value
-        return fwdpy11.conditional_models.SimulationStatus.Continue
+parser = argparse.ArgumentParser(
+                    prog='Dz_simulation_fixation',
+                   )
+parser.add_argument('-s', '--savedir', dest = "savedir", required = True)
+parser.add_argument('-f', '--sampling-factor', dest = "sampling_factor", help = "How much to sample from output.", required = False, default = 1)
+parser.add_argument('-p', '--post-fix', dest = "post_fix_gen", help = "How much time post fixation, scaled to simulations.", required = False, default = 0)
+args = parser.parse_args()
 
 
 def neutral_simulation(pop, params, seed):
@@ -50,7 +36,7 @@ def sampling_individuals(tree, n_sample):
     if n_sample == n_individuals:
         return copy.deepcopy(tree)
     individual_ids = list(range(n_individuals)) ### currently it's just this list in 1 pop simulation
-    sample_ind_ids = np.random.choice(individual_ids, size = n_sample, replace = False)
+    sample_ind_ids = rng.choice(individual_ids, size = n_sample, replace = False)
     ### extract nodes for diploid individuals
     keep_nodes = []
     for i in sample_ind_ids:
@@ -61,7 +47,11 @@ def sampling_individuals(tree, n_sample):
 
 
 
-savePath = "/home/alouette/projects/ctb-sgravel/alouette/Simulation/3.fixation_sampled_0.01_5e5Mb_Q10"
+savePath = args.savedir
+sampling_factor = float(args.sampling_factor)
+post_fix_gen = int(args.post_fix_gen)
+
+os.makedirs(savePath, exist_ok=True)
 
 #Nielsen_R = 500 #4NLp
 #Nielsen_theta = 0.002 #4Nmu
@@ -74,14 +64,21 @@ savePath = "/home/alouette/projects/ctb-sgravel/alouette/Simulation/3.fixation_s
 ### using scaling factors
 Ne = 20000
 ne_scaled= 2000
-sampling_factor = 1
-n_sample = int(ne_scaled * sampling_factor)
-sim_region = int(5e5)
 scaling_factor = Ne/ne_scaled ### scaling factor = 10
 rec_rate = 1.25e-8 * scaling_factor
 mut_rate = 1.44e-8 * scaling_factor
 sel_coeff = 0.01 * scaling_factor
+n_sample = int(ne_scaled * sampling_factor)
+
+sim_region = int(5e5)
 sim_gen = 200
+
+simulation_iteration = 1000
+start_seed = 5553
+sim_i = 0
+rng = np.random.default_rng(seed=42)
+
+
 
 pdict = {
         "recregions": [fwdpy11.PoissonInterval(0, sim_region, sim_region*rec_rate, discrete=True)],
@@ -100,15 +97,6 @@ sweep_site = fwdpy11.conditional_models.NewMutationParameters(
     data=fwdpy11.NewMutationData(effect_size = sel_coeff, dominance=1),
     position=fwdpy11.conditional_models.PositionRange(left=(sim_region/2), right=(sim_region/2 + 1)),
 )
-
-### Post fixation parameters
-### Log scale post fixation times , in terms of Ne
-post_fix_time = [0.025, 0.05, 0.1, 0.25, 0.5]
-post_fix_gen_arr = [int(t * ne_scaled) for t in post_fix_time]
-
-simulation_iteration = 1000
-start_seed = 5553
-sim_i = 0
 
 
 while sim_i < simulation_iteration:
@@ -136,16 +124,10 @@ while sim_i < simulation_iteration:
         continue
     assert output.pop.generation == output.pop.fixation_times[0]
 
-    ### At fixation, deep copy the tree to add mutiatons, save tree.
-    nmuts, sweep_fix_mut = add_neu_mutations(output.pop, mut_rate * sim_region, seed)
-    print(f"{nmuts} mutations added to sweep at fixation")
+    pop = copy.deepcopy(output.pop)
     outfile = os.path.join(savePath, "_".join(["sweep", str(seed), "fixation"]) + ".trees")
-    sweep_ts = sweep_fix_mut.dump_tables_to_tskit()
-    sampled_ts = sampling_individuals(sweep_ts, n_sample)
-    sampled_ts.dump(outfile)
-    
-    for post_fix_gen in post_fix_gen_arr:
-        continue
+    if post_fix_gen != 0:
+        outfile = os.path.join(savePath, "_".join(["sweep", str(seed), "post_fix", str(post_fix_gen), "gen"]) + ".trees")
         pdict_post_fix = {
             "recregions": [fwdpy11.PoissonInterval(0, sim_region, sim_region*rec_rate, discrete=True)],
             "gvalue": fwdpy11.Multiplicative(2.0),
@@ -156,14 +138,17 @@ while sim_i < simulation_iteration:
         }
         params_post_fix = fwdpy11.ModelParams(**pdict_post_fix)
         ### Continue neutrally evolving the population, stop at each iteration
-        pop_post_fix = neutral_simulation(output.pop, params_post_fix, seed)
-        assert pop_post_fix.generation == output.pop.fixation_times[0] + post_fix_gen
-        ### After stopping, deep copy the popualtion and add the mutations
-        nmuts, pop_with_mut = add_neu_mutations(pop_post_fix, mut_rate * sim_region, seed)
-        print(f"{nmuts} mutations added to sweep at post fixation gen {post_fix_gen}")
-        outfile = os.path.join(savePath, "_".join(["sweep", str(seed), "post_fix", str(post_fix_gen), "gen"]) + ".trees")
-        sweep_ts = pop_with_mut.dump_tables_to_tskit()
-        sweep_ts.dump(outfile)
+        pop = neutral_simulation(output.pop, params_post_fix, seed)
+        assert pop.generation == output.pop.fixation_times[0] + post_fix_gen
+        
+
+
+    nmuts, pop_with_mut = add_neu_mutations(pop, mut_rate * sim_region, seed)
+    print(f"{nmuts} mutations added to sweep at post fixation gen {post_fix_gen}")
+    
+    sweep_ts = pop_with_mut.dump_tables_to_tskit()
+    sampled_ts = sampling_individuals(sweep_ts, n_sample)
+    sampled_ts.dump(outfile)
     
     sim_i = sim_i + 1
     
