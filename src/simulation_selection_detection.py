@@ -63,11 +63,12 @@ def windowed_diversity(genotype: allel.GenotypeArray, pos_array: np.array, windo
 
 def norm_iHS(haplotype: allel.HaplotypeArray, pos_array: np.array):
     ### iHS is calculated for each variant, and then normalized by allele count
-    score = allel.ihs(haplotype, pos_array)
-    ac = haplotype.count_alleles()
-    aac = ac[:, 1]
+    aac = haplotype.count_alleles()[:, 1]
+    ihs = allel.ihs(haplotype, pos_array, min_maf = 0, include_edges = True)
+    score_norm, bins = allel.standardize_by_allele_count(ihs, aac, bins = list(range(0, 500001, 4000)))
+    win_score, bins, _ = allel.windowed_statistic(pos_array, score_norm, np.nanmean, start = 1, size = 4000, )
     #norm_score, bins = allel.standardize_by_allele_count(score, aac)
-    return score
+    return win_score, bins
 
 
 def windowed_tajima_D(genotype: allel.GenotypeArray, pos_array: np.array, window_list: list):
