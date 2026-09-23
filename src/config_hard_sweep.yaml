@@ -1,0 +1,25 @@
+# Parameters for selective sweep simulations.
+#
+# To speed up simulations, a scaling factor is given separately and multipled when running actual simulations.
+# Units of parameters are written in comments.
+# Scaled mutation rate theta = 4*Ne*mu = 0.01152
+# Scaled recombination rate rho = 4*Ne*r*L = 500
+# Scaled selection coefficient alpha = 2*Ne*s = 400
+ 
+scaling: 10            # factor to speed up simulations
+selection: 0.01        # selection coefficient 
+
+model:
+  ne: 20000            # diploid, single populaton 
+  genome: 500000       # bp
+  rec_rate: 1.25e-8    # per bp per generation 
+  mut_rate: 1.44e-8    # per bp per generation 
+ 
+simulation:
+  burnin: 10                  
+  replicates: 1000            
+  seed: 5553
+  simlen: 200             
+
+
+ 
