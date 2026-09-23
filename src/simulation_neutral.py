@@ -1,12 +1,20 @@
 import fwdpy11 
 import numpy as np 
-import fwdpy11.tskit_tools
-import fwdpy11.conditional_models
-import sys
 import os
 import msprime 
 import copy
-import math
+import argparse
+
+
+### Update: directly save the tree sequences, without converting to VCFs.
+### Read tree sequences using tskit for moments.
+
+parser = argparse.ArgumentParser(
+                    prog='Dz_simulation_fixation',
+                   )
+parser.add_argument('-s', '--savedir', dest = "savedir", required = True)
+parser.add_argument('-f', '--sampling-factor', dest = "sampling_factor", help = "How much to sample from output.", required = False, default = 1)
+args = parser.parse_args()
 
 ### Adapted from fwdpy11 manual on selective sweep, https://molpopgen.github.io/fwdpy11/short_vignettes/incomplete_sweep.html
 
@@ -42,22 +50,15 @@ def sampling_individuals(tree, n_sample):
     return sampled_tree
 
 
+savePath = args.savedir
+sampling_factor = float(args.sampling_factor)
 
+os.makedirs(savePath, exist_ok=True)
 
-savePath = "/home/alouette/projects/ctb-sgravel/alouette/Simulation/0.neutrality"
-
-#Nielsen_R = 500 #4NLp
-#Nielsen_theta = 0.002 #4Nmu
-#Nielsen_alpha = 500 #2Ns
-
-#rec_rate = Nielsen_R/4/n_sample/sim_region # mean # of breakpoints per diploid per generation
-#mut_rate = Nielsen_theta/4/n_sample/2*sim_region #per haploid genome specified by fwdpy11
-#sel_coeff = Nielsen_alpha/2/n_sample
 
 ### using scaling factors
 Ne = 20000
 ne_scaled= 2000
-sampling_factor = 1
 n_sample = int(ne_scaled * sampling_factor)
 sim_region = int(5e5)
 scaling_factor = Ne/ne_scaled ### scaling factor = 10
@@ -68,7 +69,6 @@ sim_gen = 200
 
 pdict = {
         "recregions": [fwdpy11.PoissonInterval(0, sim_region, sim_region*rec_rate, discrete=True)],
-        # Here, gvalue as multiplicative(2.0) means 1, 1+hs, 1+2s.
         "gvalue": fwdpy11.Multiplicative(2.0),
         "rates": (0, 0, None),
         "prune_selected": False,
