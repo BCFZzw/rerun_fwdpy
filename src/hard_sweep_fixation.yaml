@@ -1,0 +1,22 @@
+# parameters.yaml specification for Dz_sweep project
+
+simulationParam:
+  recombinationRate: 1.25e-7   # per bp per generation, scaled up by 10x
+  mutationRate: 1.44e-7        # per bp per generation, scaled up by 10x
+  selectionCoeff: 0.1          # scaled up by 10x
+  genomeLength: 500000         # bp, simulated length
+  N: 2000                      # diploid, single population size, scaled down by 10x
+  startFrequency: 0            # use 0 to initiate de novo mutation (a hard sweep)
+
+userParam:
+  simulationTime: 200          # the maximum time for fwdpy11 to look for the fixation
+  Seed: 5553                   # RNG to keep the result the same
+  iteration: 1000              # number of times the simulation is repeated as parallel
+
+stop_condition:
+ mode: at_fixation             # incomplete | at_fixation | post_fixation
+ targetFrequency: 1.0          # used for incomplete sweep
+ generationPostFix: 0          # used for post_fixation
+
+sampling:
+ nSample: 2000                 # final sampled output
